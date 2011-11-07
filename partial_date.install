@@ -1,0 +1,112 @@
+<?php
+
+
+/**
+ * Implement hook_field_schema().
+ */
+function partial_date_field_schema($field) {
+  // All date types carry all columns.
+  // Date range types also have corresponding "_to" columns.
+  $has_to_date = strpos($field['type'], '_range');
+  $has_date = strpos($field['type'], 'date');
+  $has_time = strpos($field['type'], 'time');
+  $has_year_hint = strpos($field['type'], 'year_estimate');
+
+  $schema = array(
+    'columns' => array(
+      'timestamp' => array(
+        'type' => 'float',
+        'size' => 'big',
+        'description' => 'The calculated timestamp for a date stored in UTC as a float for unlimited date range support.',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      // These are instance settings, so add to the schema for every field.
+      'txt_short' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'description' => 'A editable display dield for this date for the short format.',
+        'length' => 50,
+        'not null' => TRUE,
+        'default' => '',
+        'sortable' => FALSE,
+      ),
+      'txt_long' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'description' => 'A editable display dield for this date for the long format.',
+        'length' => 50,
+        'not null' => TRUE,
+        'default' => '',
+        'sortable' => FALSE,
+      ),
+    ),
+    'indexes' => array(
+      'timestamp' => array('timestamp'),
+    ),
+  );
+
+  // Instance setting to provide an approximation of the year. We always add
+  // this to allow dynamic toggling of the settings.
+  $hints = array('year_estimate');
+  if ($has_to_date) {
+    $hints[] = 'year_estimate_to';
+  }
+  foreach ($hints as $hint) {
+    $schema['columns'][$hint] = array(
+      'type' => 'int',
+      'description' => 'Year esitmate',
+      'not null' => FALSE,
+      'default' => NULL,
+      'size' => 'big',
+    );
+  }
+
+  // Add the timezone of applicable.
+  if ($has_time) {
+    $schema['columns']['timezone'] = array(
+      'type' => 'varchar',
+      'length' => 50,
+      'not null' => FALSE,
+      'sortable' => TRUE,
+    );
+  }
+
+  if ($has_to_date) {
+    $schema['columns']['timestamp_to'] = array(
+      'type' => 'float',
+      'size' => 'big',
+      'description' => 'The calculated timestamp for a date stored in UTC as a float for unlimited date range support.',
+      'not null' => FALSE,
+      'default' => NULL,
+    );
+  }
+
+  // We need to load both during installation.
+  module_load_include('module', 'partial_date');
+  module_load_include('module', 'date_api');
+
+  foreach (partial_date_components($has_date, $has_time, $has_to_date) as $key => $title) {
+    if ($has_to_date) {
+      $description = 'The ' . $title . ' for the ' . (strpos($key, '_to') ? ' finishing ' : ' starting ') . ' date.';
+    }
+    else {
+      $description = 'The ' . $title . ' for a date.';
+    }
+    if ($key == 'year' || $key == 'year_to') {
+      $size = 'big';
+    }
+    else {
+      $size = 'small';
+    }
+    $schema['columns'][$key] = array(
+      'type' => 'int',
+      'description' => $description,
+      'not null' => FALSE,
+      'default' => NULL,
+      'size' => $size,
+    );
+  }
+
+  return $schema;
+}
