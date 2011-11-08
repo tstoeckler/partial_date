@@ -212,12 +212,16 @@ function partial_date_field_validate($obj_type, $object, $field, $instance, $lan
   $has_time = strpos($field['type'], 'time');
 
   $year_estimates = array();
-  $year_estimate_options = array();
-  if ($instance['widget']['settings']['year_estimates']) {
-    if (!empty($instance['widget']['settings']['year_estimates_values'])) {
-      $year_estimate_options = $instance['widget']['settings']['year_estimates_values'];
+  $year_estimate_options = '';
+  $settings = $instance['widget']['settings'];
+
+  if ($settings['year_estimates']) {
+    if (!empty($settings['year_estimates_values'])) {
+      $year_estimate_options = $settings['year_estimates_values'];
     }
-    elseif (!empty($field['settings']['year_estimates_values'])) {
+  }
+  if (empty($year_estimate_options)) {
+    if (!empty($field['settings']['year_estimates_values'])) {
       $year_estimate_options = $field['settings']['year_estimates_values'];
     }
   }
@@ -963,7 +967,7 @@ function partial_date_element_process($element) {
         '#title' => $title,
         '#description' => $title,
         '#title_display' => 'invisible',
-        '#value' => $element['#value'][$type],
+        '#value' => empty($element['#value'][$type]) ? '' : $element['#value'][$type],
         '#attributes' => $element['#attributes'],
         '#required' => TRUE,
       );
@@ -975,7 +979,7 @@ function partial_date_element_process($element) {
         '#title' => $title,
         '#description' => $title,
         '#title_display' => 'invisible',
-        '#value' => $element['#value'][$type],
+        '#value' => empty($element['#value'][$type]) ? '' : $element['#value'][$type],
         '#attributes' => $element['#attributes'],
         '#options' => $unknown + ($type == 'year_estimate' ? $start_year_estimates : $end_year_estimates),
       );
@@ -1002,7 +1006,7 @@ function partial_date_element_process($element) {
         '#title' => t('Timezone', array(), array('context' => 'datetime')),
         '#description' => t('Timezone', array(), array('context' => 'datetime')),
         '#title_display' => 'invisible',
-        '#value' => $element['#value']['timezone'],
+        '#value' => empty($element['#value']['timezone']) ? '' : $element['#value']['timezone'],
         '#attributes' => $element['#attributes'],
         '#options' => partial_date_options('timezone', $unknown),
         '#prefix' => '<div class="partial-date-timezone" style="float: left; margin-right: 0.5em;">',
@@ -1012,7 +1016,7 @@ function partial_date_element_process($element) {
     else {
       $element['timezone'] = array(
         '#type' => 'value',
-        '#value' => $element['#value']['timezone'],
+        '#value' => empty($element['#value']['timezone']) ? '' : $element['#value']['timezone'],
       );
     }
   }
@@ -1032,7 +1036,7 @@ function partial_date_element_process($element) {
         '#title' => $title,
         '#description' => $key == 'txt_short' ? t('Short description of date') : t('Longer description of date'),
         '#title_display' => 'invisible',
-        '#value' => $element['#value'][$key],
+        '#value' => empty($element['#value'][$key]) ? '' : $element['#value'][$key],
         '#attributes' => $element['#attributes'],
         '#required' => TRUE,
         '#prefix' => '<div class="partial-date-' . $type . '" style="float: left; clear: left;">',
