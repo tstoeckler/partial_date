@@ -211,14 +211,6 @@ function partial_date_field_validate($obj_type, $object, $field, $instance, $lan
   $has_date = strpos($field['type'], 'date');
   $has_time = strpos($field['type'], 'time');
 
-  // Validate we actually have valid year as an integer value.
-  if (!partial_date_field_validate_year($item, 'year')) {
-    $errors[$field['field_name']][$langcode][$delta][] = array(
-      'error' => 'partial_date_invalid_year_estimate',
-      'message' => $message,
-    );
-  }
-
   $year_estimates = array();
   $year_estimate_options = array();
   if ($instance['widget']['settings']['year_estimates']) {
@@ -237,6 +229,13 @@ function partial_date_field_validate($obj_type, $object, $field, $instance, $lan
   }
 
   foreach ($items as $delta => $item) {
+    // Validate we actually have valid year as an integer value.
+    if ($message = partial_date_field_validate_year($item, 'year')) {
+      $errors[$field['field_name']][$langcode][$delta][] = array(
+        'error' => 'partial_date_invalid_year_estimate',
+        'message' => $message,
+      );
+    }
     if (!empty($item['year_estimate']) && !empty($item['year'])) {
       // Search and validate the first match.
       foreach ($year_estimates as $line) {
@@ -280,7 +279,7 @@ function partial_date_field_validate_year($item, $key) {
     $year = $item[$key];
     // Validate that it is a real integer.
     if ((string) $year === (string) (int) $year) {
-      if ($year < PARTIAL_DATE_YEAR_MIN || $year > PARTIAL_DATE_YEAR_MAX) {
+      if ($year > PARTIAL_DATE_YEAR_MIN || $year < PARTIAL_DATE_YEAR_MAX) {
         return;
       }
     }
@@ -364,14 +363,18 @@ function partial_date_field_widget_settings_form($field, $instance) {
 
   $options = date_granularity_names();
   if (!$has_date) {
-    unset($options['year']);
-    unset($options['month']);
-    unset($options['day']);
+    foreach (array('year', 'month', 'day') as $key) {
+      if (isset($options[$key])) {
+        unset($options[$key]);
+      }
+    }
   }
   if (!$has_time) {
-    unset($options['minute']);
-    unset($options['hour']);
-    unset($options['second']);
+    foreach (array('hour', 'minute', 'second') as $key) {
+      if (isset($options[$key])) {
+        unset($options[$key]);
+      }
+    }
   }
   $form['granularity'] = array(
     '#type' => 'checkboxes',
