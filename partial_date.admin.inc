@@ -15,9 +15,6 @@ function _partial_date_field_info() {
     'settings' => array(
       'estimates' => partial_date_field_estimates_default_settings(),
     ),
-    'instance_settings' => array(
-      'estimates' => partial_date_field_estimates_default_settings(TRUE),
-    ),
   );
   return array(
     'partial_date' => $base + array(
@@ -269,7 +266,7 @@ function partial_date_field_presave_generate_storage_date($item, $end_date = FAL
  */
 function _partial_date_field_validate($obj_type, $object, $field, $instance, $langcode, $items, &$errors) {
   $has_range = strpos($field['type'], 'range');
-  $estimate_options = partial_date_field_instance_estimates($field, $instance);
+  $estimate_options = partial_date_field_estimates($field);
 return;
 // TODO
   foreach ($items as $delta => $item) {
@@ -560,7 +557,7 @@ function _partial_date_field_widget_form(&$form, &$form_state, $field, $instance
     $value = $delta == 0 && !empty($instance['default_value'][0]) ? $instance['default_value'][0] : NULL;
   }
 
-  $estimate_options = partial_date_field_instance_estimates($field, $instance);
+  $estimate_options = partial_date_field_estimates($field);
 
   // General styles to nicely format the element inline without having to load
   // external style sheets.
