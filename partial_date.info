@@ -1,6 +1,6 @@
 name = Partial Date
 description = Simple date field that collects dates and allows partial dates.
-package = Fields
+package = Date/Time
 core = 7.x
 dependencies[] = date
 

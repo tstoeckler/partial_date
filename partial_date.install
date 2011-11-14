@@ -1,16 +1,23 @@
 <?php
 
+/**
+ * @file
+ * Defines the schema for the partial date fields.
+ */
 
 /**
  * Implement hook_field_schema().
+ *
+ * This module stores a dates in a string that represents the data that the user
+ * entered and a float timestamp that represents the best guess for the date.
+ *
+ * After tossing up the options a number of times, I've taken the conservative
+ * opinion of storing all date components separately rather than storing these
+ * in a singular field.
  */
 function partial_date_field_schema($field) {
-  // All date types carry all columns.
-  // Date range types also have corresponding "_to" columns.
-  $has_to_date = strpos($field['type'], '_range');
-  $has_date = strpos($field['type'], 'date');
-  $has_time = strpos($field['type'], 'time');
-  $has_year_hint = strpos($field['type'], 'year_estimate');
+  module_load_include('module', 'partial_date');
+  $has_range = strpos($field['type'], '_range');
 
   $schema = array(
     'columns' => array(
@@ -20,24 +27,27 @@ function partial_date_field_schema($field) {
         'description' => 'The calculated timestamp for a date stored in UTC as a float for unlimited date range support.',
         'not null' => TRUE,
         'default' => 0,
+        'sortable' => TRUE,
       ),
       // These are instance settings, so add to the schema for every field.
       'txt_short' => array(
         'type' => 'varchar',
         'length' => 255,
-        'description' => 'A editable display dield for this date for the short format.',
-        'length' => 50,
-        'not null' => TRUE,
-        'default' => '',
-        'sortable' => FALSE,
+        'description' => 'A editable display field for this date for the short format.',
+        'not null' => FALSE,
       ),
       'txt_long' => array(
         'type' => 'varchar',
         'length' => 255,
-        'description' => 'A editable display dield for this date for the long format.',
-        'length' => 50,
+        'description' => 'A editable display field for this date for the long format.',
+        'not null' => FALSE,
+        'sortable' => FALSE,
+      ),
+      'data' => array(
+        'description' => 'The configuration data for the effect.',
+        'type' => 'blob',
         'not null' => TRUE,
-        'default' => '',
+        'size' => 'big',
         'sortable' => FALSE,
       ),
     ),
@@ -46,67 +56,59 @@ function partial_date_field_schema($field) {
     ),
   );
 
-  // Instance setting to provide an approximation of the year. We always add
-  // this to allow dynamic toggling of the settings.
-  $hints = array('year_estimate');
-  if ($has_to_date) {
-    $hints[] = 'year_estimate_to';
-  }
-  foreach ($hints as $hint) {
-    $schema['columns'][$hint] = array(
-      'type' => 'int',
-      'description' => 'Year esitmate',
-      'not null' => FALSE,
-      'default' => NULL,
-      'size' => 'big',
-    );
-  }
-
-  // Add the timezone of applicable.
-  if ($has_time) {
-    $schema['columns']['timezone'] = array(
-      'type' => 'varchar',
-      'length' => 50,
-      'not null' => FALSE,
-      'sortable' => TRUE,
-    );
-  }
-
-  if ($has_to_date) {
+  if ($has_range) {
     $schema['columns']['timestamp_to'] = array(
       'type' => 'float',
       'size' => 'big',
       'description' => 'The calculated timestamp for a date stored in UTC as a float for unlimited date range support.',
-      'not null' => FALSE,
-      'default' => NULL,
+      'not null' => TRUE,
+      'default' => 0,
+      'sortable' => TRUE,
     );
+    $schema['indexes']['timestamp_to'] = array('timestamp_to');
   }
 
-  // We need to load both during installation.
-  module_load_include('module', 'partial_date');
-  module_load_include('module', 'date_api');
+  foreach (partial_date_components() as $key => $label) {
+    $description = 'The ' . $label . ' for ' . ($has_range ? 'the starting date component.' : 'a date.');
 
-  foreach (partial_date_components($has_date, $has_time, $has_to_date) as $key => $title) {
-    if ($has_to_date) {
-      $description = 'The ' . $title . ' for the ' . (strpos($key, '_to') ? ' finishing ' : ' starting ') . ' date.';
+    if ($key == 'timezone') {
+      $column = array(
+        'type' => 'varchar',
+        'length' => 50,
+        'description' => $description,
+        'not null' => FALSE,
+        'default' => NULL,
+      );
     }
     else {
-      $description = 'The ' . $title . ' for a date.';
+      $column = array(
+        'type' => 'int',
+        'description' => $description,
+        'not null' => FALSE,
+        'default' => NULL,
+        'size' => ($key == 'year' ? 'big' : 'small'),
+      );
     }
-    if ($key == 'year' || $key == 'year_to') {
-      $size = 'big';
+    $schema['columns'][$key] = $column;
+    if ($has_range) {
+      $column['description'] = 'The ' . $label . ' for the finishing date component.';
+      $schema['columns'][$key . '_to'] = $column;
     }
-    else {
-      $size = 'small';
-    }
-    $schema['columns'][$key] = array(
-      'type' => 'int',
-      'description' => $description,
-      'not null' => FALSE,
-      'default' => NULL,
-      'size' => $size,
-    );
   }
-
   return $schema;
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function partial_date_uninstall() {
+  module_load_include('module', 'partial_date');
+
+  variable_del('partial_date_component_field_inline_styles');
+  variable_del('partial_date_component_field_txt_inline_styles');
+  variable_del('partial_date_format_types');
+  foreach (partial_date_format_types() as $type => $label) {
+    variable_del('partial_date_format_' . $type);
+  }
+
 }
