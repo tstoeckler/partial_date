@@ -231,7 +231,9 @@ function partial_date_year_designation_options() {
   return array(
     'sign' => t('Negative sign (-)', array(), array('context' => 'datetime')),
     'ad' => t('Anno Domini (BC/AD)', array(), array('context' => 'datetime')),
-    'ce' => t('Common Era (BCE/CE)', array(), array('context' => 'datetime'))
+    'bc' => t('Anno Domini (BC only)', array(), array('context' => 'datetime')),
+    'ce' => t('Common Era (BCE/CE)', array(), array('context' => 'datetime')),
+    'bce' => t('Common Era (BCE only)', array(), array('context' => 'datetime'))
   );
 }
 

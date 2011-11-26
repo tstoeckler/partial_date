@@ -18,11 +18,11 @@ function _partial_date_field_info() {
   );
   return array(
     'partial_date' => $base + array(
-      'label' => t('Partial date'),
+      'label' => t('Partial date and time'),
       'description' => t('This field stores and renders partial dates.'),
     ),
     'partial_date_range' => $base + array(
-      'label' => t('Partial date range'),
+      'label' => t('Partial date and time range'),
       'description' => t('This field stores and renders partial dates.'),
     ),
   );
@@ -233,11 +233,41 @@ function _partial_date_field_presave($entity_type, $entity, $field, $instance, $
       $items[$delta]['timestamp_to'] = partial_date_mktime(partial_date_field_populate_components($item['to'], 0));
     }
 
+    // Populate empty components with the estimate components. On load, these
+    // should be cleared.
     $items[$delta]['data'] = array();
     foreach (partial_date_components(array('timezone')) as $key => $label) {
-      $items[$delta]['data'][$key . '_estimate'] = isset($item['from'][$key . '_estimate']) ? $item['from'][$key . '_estimate'] : '';
+      $items[$delta]['data'][$key . '_estimate'] = '';
+      $items[$delta]['data'][$key . '_estimate_from_used'] = 0;
+      $items[$delta]['data'][$key . '_estimate_to_used'] = 0;
+      $from = NULL;
+      $to = NULL;
+      if (!empty($item['from'][$key . '_estimate'])) {
+        $items[$delta]['data'][$key . '_estimate'] = $item['from'][$key . '_estimate'];
+        list ($from, $to) = explode('|', $item['from'][$key . '_estimate']);
+        if (!isset($item['from'][$key]) || !strlen($item['from'][$key])) {
+          $items[$delta][$key] = $from;
+          $items[$delta]['data'][$key . '_estimate_from_used'] = 1;
+        }
+        if ($has_range && (!isset($item['to'][$key]) || !strlen($item['to'][$key]))) {
+          $items[$delta][$key . '_to'] = $to;
+          $items[$delta]['data'][$key . '_estimate_to_used'] = 1;
+        }
+      }
       if ($has_range) {
-        $items[$delta]['data'][$key . '_to_estimate'] = isset($item['to'][$key . '_estimate']) ? $item['to'][$key . '_estimate'] : '';
+        $items[$delta]['data'][$key . '_to_estimate'] = '';
+        if (!empty($item['to'][$key . '_estimate'])) {
+          $items[$delta]['data'][$key . '_to_estimate'] = $item['to'][$key . '_estimate'];
+          list ($from, $to) = explode('|', $item['to'][$key . '_estimate']);
+          if (!isset($item['from'][$key]) || !strlen($item['from'][$key])) {
+            $items[$delta][$key] = $from;
+            $items[$delta]['data'][$key . '_estimate_from_used'] = 1;
+          }
+          if (!isset($item['to'][$key]) || !strlen($item['to'][$key])) {
+            $items[$delta][$key . '_to'] = $to;
+            $items[$delta]['data'][$key . '_estimate_to_used'] = 1;
+          }
+        }
       }
     }
     $items[$delta]['data'] = serialize($items[$delta]['data']);
@@ -520,6 +550,23 @@ function _partial_date_field_widget_settings_form($field, $instance) {
     '#description' => t('Select the timezone handling method for this field. Currently, this is only used to calculate the timestamp that is store in the database. This determines the sorting order when using views integration. Only %none and %date handling options will render the timezone selector to users.',
         array('%none' => $tz_options['none'], '%date' => $tz_options['date'])),
   );
+  $form['increments'] = array();
+  $form['increments']['minute'] = array(
+    '#type' => 'select',
+    '#title' => t('Minute increments'),
+    '#default_value' => empty($settings['increments']['minute']) ? 1 : $settings['increments']['minute'],
+    '#options' => drupal_map_assoc(array(1, 2, 5, 10, 15, 30)),
+    '#required' => TRUE,
+    '#weight' => -7,
+  );
+  $form['increments']['second'] = array(
+    '#type' => 'select',
+    '#title' => t('Second increments'),
+    '#default_value' => empty($settings['increments']['second']) ? 1 : $settings['increments']['second'],
+    '#options' => drupal_map_assoc(array(1, 2, 5, 10, 15, 30)),
+    '#required' => TRUE,
+    '#weight' => -7,
+  );
 
   $form['theme_overrides'] = array('#tree' => TRUE);
   $form['theme_overrides']['txt_short'] = array(
@@ -549,6 +596,9 @@ function _partial_date_field_widget_form(&$form, &$form_state, $field, $instance
   if (empty($base['#title'])) {
     $base['#title_display'] = 'invisible';
   }
+  elseif ($field['cardinality'] == 1) {
+    $base['#type'] = 'item';
+  }
 
   if (isset($items[$delta])) {
     $value = $items[$delta];
@@ -565,7 +615,8 @@ function _partial_date_field_widget_form(&$form, &$form_state, $field, $instance
   $css_txt = variable_get('partial_date_component_field_txt_inline_styles', 'float: left; clear: left;');
 
   // Correct the timezone based on the widget values.
-  $value['from']['timezone'] = partial_date_timezone_handling_correlation($value['from']['timezone'], $settings['tz_handling']);
+  $tz_from = empty($value) || empty($value['from']) || empty($value['from']['timezone']) ? NULL : $value['from']['timezone'];
+  $value['from']['timezone'] = partial_date_timezone_handling_correlation($tz_from, $settings['tz_handling']);
 
   if (!partial_date_timezone_option_is_selectable($settings['tz_handling'])) {
     unset($settings['granularity']['from']['timezone']);
@@ -574,6 +625,7 @@ function _partial_date_field_widget_form(&$form, &$form_state, $field, $instance
     }
   }
 
+  $increments = empty($settings['increments']) ? array() : $settings['increments'];
   $base['from'] = array(
     '#type' => 'partial_datetime_element',
     '#title' => $has_range ? t('Start date') : t('Date'),
@@ -583,6 +635,7 @@ function _partial_date_field_widget_form(&$form, &$form_state, $field, $instance
     '#estimates' => $settings['estimates']['from'],
     '#estimate_options' => $estimate_options,
     '#component_styles' => $css,
+    '#increments' => $increments,
   );
 
   if ($has_range) {
@@ -591,7 +644,8 @@ function _partial_date_field_widget_form(&$form, &$form_state, $field, $instance
       '#markup' => t('<div class="partial-date-separator">to</div>', array(), array('context' => 'datetime')),
     );
     // Correct the timezone based on the widget values.
-    $value['to']['timezone'] = partial_date_timezone_handling_correlation(empty($value['to']) ? NULL : $value['to']['timezone'], $settings['tz_handling']);
+    $tz_to = empty($value) || empty($value['to']) || empty($value['to']['timezone']) ? NULL : $value['to']['timezone'];
+    $value['to']['timezone'] = partial_date_timezone_handling_correlation($tz_to, $settings['tz_handling']);
     $base['to'] = array(
       '#type' => 'partial_datetime_element',
       '#title' => $has_range ? t('Start date') : t('Date'),
@@ -601,6 +655,7 @@ function _partial_date_field_widget_form(&$form, &$form_state, $field, $instance
       '#estimates' => $settings['estimates']['to'],
       '#estimate_options' => $estimate_options,
       '#component_styles' => $css,
+      '#increments' => $increments,
     );
   }
 
@@ -832,6 +887,11 @@ function _partial_date_element_process($element) {
   $granularity = $element['#granularity'];
   $estimates = $element['#estimates'];
   $options = $element['#estimate_options'];
+  $increments = empty($element['#increments']) ? array() : $element['#increments'];
+  $increments += array(
+    'second' => 1,
+    'minute' => 1,
+  );
   $blank_option = array('' => t('N/A'));
   foreach (partial_date_components() as $key => $label) {
     if (!empty($estimates[$key]) && !empty($options[$key])) {
@@ -860,6 +920,7 @@ function _partial_date_element_process($element) {
         $element[$key]['#attributes']['size'] = 5;
       }
       else {
+        $inc = empty($increments[$key]) ? 1 : $increments[$key];
         $element[$key] = array(
           '#type' => 'select',
           '#title' => $label,
@@ -867,7 +928,7 @@ function _partial_date_element_process($element) {
           '#title_display' => 'invisible',
           '#value' => isset($element['#value'][$key]) && strlen($element['#value'][$key]) ? $element['#value'][$key] : '',
           '#attributes' => $element['#attributes'],
-          '#options' => partial_date_granularity_field_options($key, $blank_option),
+          '#options' => partial_date_granularity_field_options($key, $blank_option, $inc),
         );
       }
     }

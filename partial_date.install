@@ -46,7 +46,7 @@ function partial_date_field_schema($field) {
       'data' => array(
         'description' => 'The configuration data for the effect.',
         'type' => 'blob',
-        'not null' => TRUE,
+        'not null' => FALSE,
         'size' => 'big',
         'sortable' => FALSE,
       ),
@@ -110,5 +110,4 @@ function partial_date_uninstall() {
   foreach (partial_date_format_types() as $type => $label) {
     variable_del('partial_date_format_' . $type);
   }
-
 }

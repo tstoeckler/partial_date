@@ -127,6 +127,7 @@ function partial_date_field_load($entity_type, $entities, $field, $instances, $l
     foreach ($items[$id] as $delta => $item) {
       // Generate a cleaner array based storage of the values.
       $items[$id][$delta]['data'] = empty($item['data']) ? array() : unserialize($item['data']);
+
       $item['data'] = $items[$id][$delta]['data'];
       $items[$id][$delta]['from'] = array();
       if ($has_range) {
@@ -135,16 +136,26 @@ function partial_date_field_load($entity_type, $entities, $field, $instances, $l
 
       foreach (partial_date_components() as $key => $title) {
         $items[$id][$delta]['from'][$key] = $item[$key];
+        // Clear auto-populated estimate values.
+        if (!empty($item['data'][$key . '_estimate_from_used'])) {
+          $items[$id][$delta]['from'][$key] = '';
+        }
+
         unset($items[$id][$delta][$key]);
         if ($key != 'timezone') {
-          $items[$id][$delta]['from'][$key . '_estimate'] = $item['data'][$key . '_estimate'];
+          $items[$id][$delta]['from'][$key . '_estimate'] = isset($item['data'][$key . '_estimate']) ? $item['data'][$key . '_estimate'] : '';
           _partial_date_expand_estimate($key, $items[$id][$delta]['from'], $estimates);
         }
         if ($has_range) {
           $items[$id][$delta]['to'][$key] = $item[$key . '_to'];
           unset($items[$id][$delta][$key . '_to']);
+          // Clear auto-populated estimate values.
+          if (!empty($item['data'][$key . '_estimate_to_used'])) {
+            $items[$id][$delta]['from'][$key] = '';
+          }
+
           if ($key != 'timezone') {
-            $items[$id][$delta]['to'][$key . '_estimate'] = $item['data'][$key . '_to_estimate'];
+            $items[$id][$delta]['to'][$key . '_estimate'] = isset($item['data'][$key . '_to_estimate']) ? $item['data'][$key . '_to_estimate'] : '';
             _partial_date_expand_estimate($key, $items[$id][$delta]['to'], $estimates, FALSE);
           }
         }
@@ -263,6 +274,10 @@ function partial_date_field_widget_info() {
         'estimates' => array(
           'from' => array_combine(array_keys(partial_date_components(array('timezone'))), array_fill(0, 6, '')),
           'to' => array_combine(array_keys(partial_date_components(array('timezone'))), array_fill(0, 6, '')),
+        ),
+        'increments' => array(
+          'second' => 1,
+          'minute' => 1,
         ),
       ),
     ),
@@ -1002,11 +1017,11 @@ function partial_date_timezone_handling_correlation($timezone = '', $tz_handling
  * @param array $options
  *   Additional values to prefix onto the options list.
  */
-function partial_date_granularity_field_options($type, $options = array()) {
+function partial_date_granularity_field_options($type, $options = array(), $increment = 1) {
   switch ($type) {
     case 'second':
     case 'minute':
-      return $options + drupal_map_assoc(range(0, 59));
+      return $options + date_minutes('i', FALSE, $increment);
 
     case 'hour':
       return $options + drupal_map_assoc(range(0, 23));
@@ -1138,8 +1153,14 @@ function partial_date_year_designation_decorator($year, $designation = 'ce') {
     case 'ce':
       return $year > 0 ? $designation_suffixes['CE'] : $designation_suffixes['BCE'];
 
+    case 'bce':
+      return $year > 0 ? '' : $designation_suffixes['BCE'];
+
     case 'ad':
       return $year > 0 ? $designation_suffixes['AD'] : $designation_suffixes['BC'];
+
+    case 'bc':
+      return $year > 0 ? '' : $designation_suffixes['BC'];
 
     case 'sign':
     default:
