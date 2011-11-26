@@ -105,6 +105,14 @@ function partial_date_type_format_elements($settings) {
     '#maxlength' => 15,
     '#default_value' => !isset($settings['separator']['other']) ? ' ' : $settings['separator']['other'],
   );
+  $elements['separator']['range'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Range separator'),
+    '#size' => 8,
+    '#maxlength' => 15,
+    '#default_value' => !isset($settings['separator']['range']) ? '' : $settings['separator']['range'],
+    '#description' => t('This separator is used to seperate date components in the range element. This defaults to "to" if this field is empty.'),
+  );
 
   $custom = array('c1' => t('Custom component 1'), 'c2' => t('Custom component 2'), 'c3' => t('Custom component 3'));
 

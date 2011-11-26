@@ -501,8 +501,9 @@ function partial_date_render_range($from = NULL, $to = NULL, $settings = array()
   // TODO: Make this configurable.
   $settings += array(
     'reduce' => TRUE,
+    'format' => 'short',
   );
-
+  $settings['component_settings'] += partial_date_format_settings($settings['format']);
   if ($settings['reduce']) {
     partial_date_reduce_range_values($from, $to);
   }
@@ -588,6 +589,7 @@ function partial_date_format_default_options($format) {
         'time' => ':',
         'datetime' => ' ',
         'other' => ' ',
+        'range' => '',
       ),
       'meridiem' => 'a',
       'year_designation' => 'ce',
@@ -619,6 +621,7 @@ function partial_date_format_default_options($format) {
         'time' => ':',
         'datetime' => ' ',
         'other' => ' ',
+        'range' => '',
       ),
       'meridiem' => 'a',
       'year_designation' => 'ce',
@@ -650,6 +653,7 @@ function partial_date_format_default_options($format) {
         'time' => ':',
         'datetime' => ', ',
         'other' => ' ',
+        'range' => '',
       ),
       'meridiem' => 'a',
       'year_designation' => 'ce',
@@ -705,7 +709,7 @@ function partial_date_theme() {
       'variables' => array('item' => NULL, 'format' => 'short', 'settings' => array()),
     ),
     'partial_date_range' => array(
-      'variables' => array('from' => NULL, 'to' => NULL, 'format' => 'short', 'settings' => array()),
+      'variables' => array('from' => NULL, 'to' => NULL, 'settings' => array()),
     ),
     'partial_date_format_settings_form' => array(
       'render element' => 'form',
@@ -727,7 +731,17 @@ function theme_partial_date_element($variables) {
 function theme_partial_date_range($variables) {
   $to = $variables['to'];
   $from = $variables['from'];
-  return t('@from to @to', array('@from' => $from, '@to' => $to));
+  $settings = $variables['settings'];
+  $separator = '';
+  if (!empty($settings['component_settings'])
+    && !empty($settings['component_settings']['separator'])
+    && !empty($settings['component_settings']['separator']['range'])) {
+    $separator = $settings['component_settings']['separator']['range'];
+  }
+  if (!strlen($separator)) {
+    $separator = t(' to ', array(), array('context' => 'datetime'));
+  }
+  return t('@from@separator@to', array('@from' => $from, '@to' => $to, '@separator' => $separator));
 }
 
 /**

@@ -819,6 +819,7 @@ function _partial_date_field_formatter_settings_summary($field, $instance, $view
         'time' => ':',
         'datetime' => ', ',
         'other' => ' ',
+        'range' => '',
       ),
       'meridiem' => 1,
       'year_designation' => 'ce',
