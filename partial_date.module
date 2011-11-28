@@ -88,7 +88,7 @@ function partial_date_menu() {
 #   * partial_date_field_populate_components()                                 #
 #                                                                              #
 #     Helper for hook_field_presave() to populate any missing values prior to  #
-#     generating the timestamp estimate.                                       #
+#     generating the float date value estimates. (The fake timestamp columns). #
 #                                                                              #
 #   * partial_date_field_presave_generate_storage_date()                       #
 #                                                                              #
@@ -124,39 +124,38 @@ function partial_date_field_load($entity_type, $entities, $field, $instances, $l
   $has_range = strpos($field['type'], '_range');
   $estimates = partial_date_field_estimates($field);
   foreach ($entities as $id => $entity) {
-    foreach ($items[$id] as $delta => $item) {
+    foreach ($items[$id] as $delta => &$item) {
       // Generate a cleaner array based storage of the values.
-      $items[$id][$delta]['data'] = empty($item['data']) ? array() : unserialize($item['data']);
+      $item['data'] = empty($item['data']) ? array() : unserialize($item['data']);
 
-      $item['data'] = $items[$id][$delta]['data'];
-      $items[$id][$delta]['from'] = array();
+      $item['from'] = array();
       if ($has_range) {
-        $items[$id][$delta]['to'] = array();
+        $item['to'] = array();
       }
 
       foreach (partial_date_components() as $key => $title) {
-        $items[$id][$delta]['from'][$key] = $item[$key];
+        $item['from'][$key] = $item[$key];
         // Clear auto-populated estimate values.
         if (!empty($item['data'][$key . '_estimate_from_used'])) {
-          $items[$id][$delta]['from'][$key] = '';
+          $item['from'][$key] = '';
         }
 
-        unset($items[$id][$delta][$key]);
+        unset($item[$key]);
         if ($key != 'timezone') {
-          $items[$id][$delta]['from'][$key . '_estimate'] = isset($item['data'][$key . '_estimate']) ? $item['data'][$key . '_estimate'] : '';
-          _partial_date_expand_estimate($key, $items[$id][$delta]['from'], $estimates);
+          $item['from'][$key . '_estimate'] = isset($item['data'][$key . '_estimate']) ? $item['data'][$key . '_estimate'] : '';
+          _partial_date_expand_estimate($key, $item['from'], $estimates);
         }
         if ($has_range) {
-          $items[$id][$delta]['to'][$key] = $item[$key . '_to'];
-          unset($items[$id][$delta][$key . '_to']);
+          $item['to'][$key] = $item[$key . '_to'];
+          unset($item[$key . '_to']);
           // Clear auto-populated estimate values.
           if (!empty($item['data'][$key . '_estimate_to_used'])) {
-            $items[$id][$delta]['from'][$key] = '';
+            $item['to'][$key] = '';
           }
 
           if ($key != 'timezone') {
-            $items[$id][$delta]['to'][$key . '_estimate'] = isset($item['data'][$key . '_to_estimate']) ? $item['data'][$key . '_to_estimate'] : '';
-            _partial_date_expand_estimate($key, $items[$id][$delta]['to'], $estimates, FALSE);
+            $item['to'][$key . '_estimate'] = isset($item['data'][$key . '_to_estimate']) ? $item['data'][$key . '_to_estimate'] : '';
+            _partial_date_expand_estimate($key, $item['to'], $estimates, FALSE);
           }
         }
       }
@@ -1244,6 +1243,30 @@ function partial_date_is_leap_year($year) {
      // post Gregorio XIII - 1582
      return (($year % 4 == 0) && ($year % 100 != 0)) || ($year % 400 == 0);
    }
+}
+
+/**
+ * Generates a numeric date string.
+ */
+function partial_date_float(array $c) {
+  foreach (partial_date_components(array('timezone')) as $key => $label) {
+    if (!isset($c[$key]) || !strlen($c[$key])) {
+      $c[$key] = 0;
+    }
+    elseif ($key != 'year' && $key != 'month') {
+      // Increment hours, minutes and seconds to allow the module to distintish
+      // between 0 meaning unset and 1 to 24/60 being the actual values.
+      // Day is incremented to provide a buffer to add / remove the timezone.
+      $c[$key] = $c[$key] + 1;
+    }
+  }
+  $date = $c['year']
+      . sprintf('%02s', $c['month'])  // 0 or 1-12
+      . sprintf('%02s', $c['day']) // 0 or 2-32
+      . sprintf('%02s', $c['hour']) // 0 or 1-24
+      . sprintf('%02s', $c['minute']) // 0 or 1-60
+      . sprintf('%02s', $c['second']); // 0 or 1-60
+  return (float) $date;
 }
 
 /**

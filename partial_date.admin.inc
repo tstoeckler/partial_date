@@ -176,11 +176,10 @@ function partial_date_field_populate_components($item, $start_date = TRUE) {
     'timezone' => '',
   );
 
-  if ($components = partial_date_field_widget_reduce_date_components($item, $start_date)) {
-    foreach ($components as $key => $value) {
-      if (isset($value)) {
-        $base[$key] = $value;
-      }
+  foreach (partial_date_components() as $key => $label) {
+    $value_key = $start_date ? $key : $key . '_to';
+    if (isset($item[$value_key]) && strlen($item[$value_key])) {
+      $base[$key] = $item[$value_key];
     }
   }
 
@@ -225,12 +224,10 @@ function _partial_date_field_presave($entity_type, $entity, $field, $instance, $
     $items[$delta]['txt_short'] = isset($item['txt_short']) ? $item['txt_short'] : NULL;
     $items[$delta]['txt_long'] = isset($item['txt_long']) ? $item['txt_long'] : NULL;
     $items[$delta] += partial_date_field_presave_generate_storage_date($item['from']);
-    $items[$delta]['timestamp'] = partial_date_mktime(partial_date_field_populate_components($item['from']));
 
     if ($has_range) {
       $item['to'] = empty($item['to']) ? array() : $item['to'];
       $items[$delta] += partial_date_field_presave_generate_storage_date($item['to'], TRUE);
-      $items[$delta]['timestamp_to'] = partial_date_mktime(partial_date_field_populate_components($item['to'], 0));
     }
 
     // Populate empty components with the estimate components. On load, these
@@ -257,19 +254,27 @@ function _partial_date_field_presave($entity_type, $entity, $field, $instance, $
       if ($has_range) {
         $items[$delta]['data'][$key . '_to_estimate'] = '';
         if (!empty($item['to'][$key . '_estimate'])) {
+          // We use the to estimate if not set
           $items[$delta]['data'][$key . '_to_estimate'] = $item['to'][$key . '_estimate'];
-          list ($from, $to) = explode('|', $item['to'][$key . '_estimate']);
-          if (!isset($item['from'][$key]) || !strlen($item['from'][$key])) {
-            $items[$delta][$key] = $from;
+          list ($from_to, $to_to) = explode('|', $item['to'][$key . '_estimate']);
+          if (!isset($item['from'][$key]) || !strlen($item['from'][$key]) || $items[$delta]['data'][$key . '_estimate_from_used']) {
+            $items[$delta][$key] = is_numeric($from) ? min(array($from_to, $from)) : $from_to;
             $items[$delta]['data'][$key . '_estimate_from_used'] = 1;
           }
-          if (!isset($item['to'][$key]) || !strlen($item['to'][$key])) {
-            $items[$delta][$key . '_to'] = $to;
+          if (!isset($item['to'][$key]) || !strlen($item['to'][$key]) || $items[$delta]['data'][$key . '_estimate_to_used']) {
+            $items[$delta][$key . '_to'] = is_numeric($to) ? max(array($to_to, $to)) : $to_to;;
             $items[$delta]['data'][$key . '_estimate_to_used'] = 1;
           }
         }
       }
     }
+
+    // This is done after the estimates are expanded out.
+    $items[$delta]['timestamp'] = partial_date_float(partial_date_field_populate_components($items[$delta]));
+    if ($has_range) {
+      $items[$delta]['timestamp_to'] = partial_date_float(partial_date_field_populate_components($items[$delta], 0));
+    }
+
     $items[$delta]['data'] = serialize($items[$delta]['data']);
   }
 }

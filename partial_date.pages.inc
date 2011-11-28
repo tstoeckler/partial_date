@@ -111,7 +111,7 @@ function partial_date_type_format_elements($settings) {
     '#size' => 8,
     '#maxlength' => 15,
     '#default_value' => !isset($settings['separator']['range']) ? '' : $settings['separator']['range'],
-    '#description' => t('This separator is used to seperate date components in the range element. This defaults to "to" if this field is empty.'),
+    '#description' => t('This separator is used to seperate date components in the range element. This defaults to " to " if this field is empty. Add spaces if you need spaces between the separator and the date values.'),
   );
 
   $custom = array('c1' => t('Custom component 1'), 'c2' => t('Custom component 2'), 'c3' => t('Custom component 3'));
@@ -224,6 +224,8 @@ function theme_partial_date_format_settings_form($variables) {
   drupal_add_tabledrag('partial-date-format-order', 'order', 'sibling', 'partial-date-format-order-weight');
   return theme('table', array('header' => $header, 'rows' => $rows, 'attributes' => array('id' => 'partial-date-format-order')));
 }
+
+
 
 function partial_date_meridiem_options() {
   return array(
