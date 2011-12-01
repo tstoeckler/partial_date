@@ -1260,13 +1260,14 @@ function partial_date_float(array $c) {
       $c[$key] = $c[$key] + 1;
     }
   }
-  $date = $c['year']
+
+  $date = abs($c['year'])
       . sprintf('%02s', $c['month'])  // 0 or 1-12
       . sprintf('%02s', $c['day']) // 0 or 2-32
       . sprintf('%02s', $c['hour']) // 0 or 1-24
       . sprintf('%02s', $c['minute']) // 0 or 1-60
       . sprintf('%02s', $c['second']); // 0 or 1-60
-  return (float) $date;
+  return ((float) ltrim($date, '0')) * ($c['year'] >= 0 ? 1.0 : -1.0);
 }
 
 /**
@@ -1517,13 +1518,13 @@ function partial_date_format($item, array $settings = array()) {
 
         case 'date_only':
           if ($value !== FALSE) {
-            $markup = partial_date_format_component($value, $component['format'], $item);
+            $markup = partial_date_format_component($value, $component['format'], $item, $settings);
           }
           break;
 
         case 'date_or':
           if ($value !== FALSE) {
-            $markup = partial_date_format_component($value, $component['format'], $item);
+            $markup = partial_date_format_component($value, $component['format'], $item, $settings);
             break;
           }
           // Fall through
@@ -1536,8 +1537,8 @@ function partial_date_format($item, array $settings = array()) {
 
         case 'estimate_range':
           list($start, $end) = explode('|', $item[$type . '_estimate']);
-          $start = partial_date_format_component($start, $component['format'], $item);
-          $end = partial_date_format_component($end, $component['format'], $item);
+          $start = partial_date_format_component($start, $component['format'], $item, $settings);
+          $end = partial_date_format_component($end, $component['format'], $item, $settings);
           if (strlen($start) && strlen($end)) {
             $markup = t('@estimate_start to @estimate_end', array('@estimate_start' => $start, '@estimate_end' => $end));
           }
@@ -1547,7 +1548,7 @@ function partial_date_format($item, array $settings = array()) {
           break;
 
         case 'estimate_component':
-          $markup = partial_date_format_component($item[$type . '_estimate_value'], $component['format'], $item);
+          $markup = partial_date_format_component($item[$type . '_estimate_value'], $component['format'], $item, $settings);
           break;
 
       }
@@ -1582,8 +1583,12 @@ function partial_date_format($item, array $settings = array()) {
   return implode('', $components);
 }
 
-function partial_date_format_component($value, $format, &$date) {
+function partial_date_format_component($value, $format, &$date, $additional = array()) {
 
+  $additional += array(
+    'meridiem' => 'a',
+    'year_designation' => 'ce',
+  );
   // If dealing with 12 hour times, recalculate the value.
   if ($format == 'h' || $format == 'g') {
     if ($value > 12) {
@@ -1604,7 +1609,10 @@ function partial_date_format_component($value, $format, &$date) {
 
     case 'y-ce':
     case 'Y-ce':
-      $suffix = partial_date_year_designation_decorator($value);
+      $suffix = partial_date_year_designation_decorator($value, $additional['year_designation']);
+      if (!empty($suffix) && !empty($value)) {
+        $value = abs($value);
+      }
       break;
   }
 
