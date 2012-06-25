@@ -525,8 +525,9 @@ function partial_date_render($item, $settings = array()) {
     'format' => 'short',
     'component_settings' => array(),
   );
-  $settings['component_settings'] += partial_date_format_settings($settings['format']);
-
+  if ($settings['format'] != 'custom') {
+    $settings['component_settings'] = partial_date_format_settings($settings['format']);
+  }
   return theme('partial_date', array('item' => $item, 'settings' => $settings['component_settings'], 'format' => $settings['format']));
 }
 
