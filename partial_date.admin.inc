@@ -586,7 +586,11 @@ function _partial_date_field_widget_settings_form($field, $instance) {
     '#default_value' => $settings['theme_overrides']['txt_long'],
     '#weight' => -4,
   );
-
+  $form['hide_remove'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Hide the %remove checkbox', array('%remove' => t('Remove date', array(), array('context' => 'datetime')))),
+    '#default_value' => !empty($settings['hide_remove']),
+  );
   return $form;
 }
 
@@ -664,14 +668,6 @@ function _partial_date_field_widget_form(&$form, &$form_state, $field, $instance
     );
   }
 
-  $base['_remove'] = array(
-    '#type' => 'checkbox',
-    '#title' => t('Remove date', array(), array('context' => 'datetime')),
-    '#default_value' => 0,
-    '#prefix' => '<div class="partial-date-remove" ' . ($css ? ' style="' . $css . '"' : '') . '">',
-    '#suffix' => '</div>',
-  );
-
   foreach (array('txt_short', 'txt_long') as $key) {
     if (!empty($settings['theme_overrides'][$key])) {
       if ($key == 'txt_short') {
@@ -700,6 +696,15 @@ function _partial_date_field_widget_form(&$form, &$form_state, $field, $instance
     //    case '--user--':
     //    case '--site--':
   }
+
+  $base['_remove'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Remove date', array(), array('context' => 'datetime')),
+    '#default_value' => 0,
+    '#access' => empty($settings['hide_remove']),
+    '#prefix' => '<div class="partial-date-remove" ' . ($css ? ' style="' . $css . '"' : '') . '">',
+    '#suffix' => '</div>',
+  );
 
   $base['#prefix'] = '<div class="clearfix">';
   $base['#suffix'] = '</div>';

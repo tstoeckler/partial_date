@@ -278,6 +278,7 @@ function partial_date_field_widget_info() {
           'second' => 1,
           'minute' => 1,
         ),
+        'hide_remove' > 0,
       ),
     ),
   );
