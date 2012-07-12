@@ -702,7 +702,7 @@ function _partial_date_field_widget_form(&$form, &$form_state, $field, $instance
     '#title' => t('Remove date', array(), array('context' => 'datetime')),
     '#default_value' => 0,
     '#access' => empty($settings['hide_remove']),
-    '#prefix' => '<div class="partial-date-remove" ' . ($css ? ' style="' . $css . '"' : '') . '">',
+    '#prefix' => '<div class="partial-date-remove" ' . ($css ? ' style="' . $css . '"' : '') . '>',
     '#suffix' => '</div>',
   );
 
