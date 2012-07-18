@@ -14,6 +14,9 @@ function _partial_date_field_info() {
     'default_formatter' => 'partial_date_default',
     'settings' => array(
       'estimates' => partial_date_field_estimates_default_settings(),
+      // Minimal set of components before considered incomplete.
+      // Includes each component and any, any_form, and any_to.
+      'minimum_components' => array(),
     ),
   );
   return array(
@@ -80,7 +83,7 @@ function partial_date_field_estimates_default_settings($clean = FALSE) {
  * Helper function to duplicate the same settings on both the instance and field
  * settings.
  */
-function partial_date_field_estimates_settings_form($settings) {
+function partial_date_field_estimates_settings_form($settings, $field, $instance, $has_data) {
   $form = array();
   $form['estimates'] = array(
     '#type' => 'fieldset',
@@ -109,6 +112,61 @@ function partial_date_field_estimates_settings_form($settings) {
       '#date_component' => $key,
     );
   }
+
+  $widget_settings = $instance['widget']['settings'];
+
+  $form['minimum_components'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Minimum components'),
+    '#description' => t('These are used to determine if the field is incomplete during validation. All possible fields are listed here, but these are only checked if enabled in the instance settings.'),
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+    '#tree' => TRUE,
+  );
+  $has_range = strpos($field['type'], '_range');
+  $options = array();
+  foreach (partial_date_components() as $key => $label) {
+    $form['minimum_components']['from_granularity_' . $key] = array(
+      '#type' => 'checkbox',
+      '#title' => $has_range ? t('From @date_component', array('@date_component' => $label)) : $label,
+      '#default_value' => !empty($settings['minimum_components']['from_granularity_' . $key]),
+    );
+  }
+  foreach (partial_date_components(array('timezone')) as $key => $label) {
+    $form['minimum_components']['from_estimates_' . $key] = array(
+      '#type' => 'checkbox',
+      '#title' => $has_range
+          ? t('From Estimate @date_component', array('@date_component' => $label))
+          : t('Estimate @date_component', array('@date_component' => $label)),
+      '#default_value' => !empty($settings['minimum_components']['from_estimates_' . $key]),
+    );
+  }
+  if ($field['type'] == 'partial_date_range') {
+    foreach (partial_date_components() as $key => $label) {
+      $form['minimum_components']['to_granularity_' . $key] = array(
+        '#type' => 'checkbox',
+        '#title' => t('To @date_component', array('@date_component' => $label)),
+        '#default_value' => !empty($settings['minimum_components']['to_granularity_' . $key]),
+      );
+    }
+    foreach (partial_date_components(array('timezone')) as $key => $label) {
+      $form['minimum_components']['to_estimates_' . $key] = array(
+        '#type' => 'checkbox',
+        '#title' => t('To Estimate @date_component', array('@date_component' => $label)),
+        '#default_value' => !empty($settings['minimum_components']['to_estimates_' . $key]),
+      );
+    }
+  }
+  $form['minimum_components']['txt_short'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Short date text'),
+    '#default_value' => !empty($settings['minimum_components']['txt_short']),
+  );
+  $form['minimum_components']['txt_long'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Long date text'),
+    '#default_value' => !empty($settings['minimum_components']['txt_long']),
+  );
   return $form;
 }
 
@@ -232,7 +290,10 @@ function _partial_date_field_presave($entity_type, $entity, $field, $instance, $
 
     // Populate empty components with the estimate components. On load, these
     // should be cleared.
-    $items[$delta]['data'] = array();
+    $items[$delta]['data'] = array(
+      'check_approximate' => empty($item['check_approximate']) ? 0 : 1,
+    );
+
     foreach (partial_date_components(array('timezone')) as $key => $label) {
       $items[$delta]['data'][$key . '_estimate'] = '';
       $items[$delta]['data'][$key . '_estimate_from_used'] = 0;
@@ -299,8 +360,117 @@ function partial_date_field_presave_generate_storage_date($item, $end_date = FAL
  *
  * @see partial_date_field_widget_error().
  */
-function _partial_date_field_validate($obj_type, $object, $field, $instance, $langcode, $items, &$errors) {
+function _partial_date_field_validate($entity_type, $entity, $field, $instance, $langcode, $items, &$errors) {
   $has_range = strpos($field['type'], 'range');
+  $date_components = partial_date_components();
+
+  $has_data = FALSE;
+  $minimum_components = FALSE;
+  if (!empty($field['settings']['minimum_components'])) {
+    $minimum_components = array_filter($field['settings']['minimum_components']);
+    $widget_settings = $instance['widget']['settings'];
+    $widget_components = array();
+    foreach (array_filter($widget_settings['granularity']['from']) as $key) {
+      $widget_components['from_granularity_' . $key] = $has_range ? t('From @component', array('@component' => $date_components[$key])) : $date_components[$key];
+    }
+    foreach (array_filter($widget_settings['estimates']['from']) as $key) {
+      $widget_components['from_estimates_' . $key] = $has_range ? t('From @component Estimate', array('@component' => $date_components[$key])) : $date_components[$key];
+    }
+    if ($has_range) {
+      foreach (array_filter($widget_settings['granularity']['to']) as $key) {
+        $widget_components['to_granularity_' . $key] = t('To @component', array('@component' => $date_components[$key]));
+      }
+      foreach (array_filter($widget_settings['estimates']['to']) as $key) {
+        $widget_components['to_estimates_' . $key] = t('To @component Estimate', array('@component' => $date_components[$key]));
+      }
+    }
+    if (!empty($widget_settings['theme_overrides']['txt_short'])) {
+      $widget_components['txt_short'] = t('Short date description');
+    }
+    if (!empty($widget_settings['theme_overrides']['txt_long'])) {
+      $widget_components['txt_long'] = t('Long date description');
+    }
+    $minimum_components = array_intersect_key($widget_components, $minimum_components);
+  }
+
+  foreach ($items as $delta => $item) {
+    if (!partial_date_field_is_empty($item, $field)) {
+      $has_data = TRUE;
+      $incomplete = array();
+      if ($minimum_components) {
+        foreach ($minimum_components as $key => $label) {
+          if (strpos($key, 'from_granularity_') === 0) {
+            $component = str_replace('from_granularity_', '', $key);
+            if (empty($item['from'][$component])) {
+              $errors[$field['field_name']][$langcode][$delta][] = array(
+                'error' => 'partial_date_incomplete_from',
+                'partial_date_component' => $component,
+                'message' => t('@component is required', array('@component' => $label)),
+              );
+            }
+          }
+          elseif (strpos($key, 'from_estimates_') === 0) {
+            $component = str_replace('from_estimates_', '', $key) . '_estimate';
+            if (empty($item['from'][$component])) {
+              $errors[$field['field_name']][$langcode][$delta][] = array(
+                'error' => 'partial_date_incomplete_from',
+                'partial_date_component' => $component,
+                'message' => t('@component is required', array('@component' => $label)),
+              );
+            }
+          }
+          elseif (strpos($key, 'to_granularity_') === 0) {
+            $component = str_replace('to_granularity_', '', $key);
+            if (empty($item['to'][$component])) {
+              $errors[$field['field_name']][$langcode][$delta][] = array(
+                'error' => 'partial_date_incomplete_to',
+                'partial_date_component' => $component,
+                'message' => t('@component is required', array('@component' => $label)),
+              );
+            }
+          }
+          elseif (strpos($key, 'to_estimates_') === 0) {
+            $component = str_replace('to_estimates_', '', $key) . '_estimate';
+            if (empty($item['to'][$component])) {
+              $errors[$field['field_name']][$langcode][$delta][] = array(
+                'error' => 'partial_date_incomplete_to',
+                'partial_date_component' => $component,
+                'message' => t('@component is required', array('@component' => $label)),
+              );
+            }
+          }
+          else {
+            if (empty($item[$key])) {
+              $errors[$field['field_name']][$langcode][$delta][] = array(
+                'error' => 'partial_date_incomplete_' . $key,
+                'partial_date_component' => $component,
+                'message' => t('@component is required', array('@component' => $label)),
+              );
+            }
+          }
+        }
+      }
+    }
+  }
+
+  if ($entity_type && $entity && !$has_data && $instance['required']) {
+    if (!empty($minimum_components)) {
+      $errors[$field['field_name']][$langcode][0][] = array(
+        'error' => 'partial_date_is_required',
+        'message' => t('@label requires at least one item to be completed. The following components are required: @components', array(
+            '@label' => $instance['label'],
+            '@components' => implode(', ', $minimum_components),
+        )),
+      );
+    }
+    else {
+      $errors[$field['field_name']][$langcode][0][] = array(
+        'error' => 'partial_date_is_required',
+        'message' => t('@label requires at least one item to be completed.', array('@label' => $instance['label'])),
+      );
+    }
+  }
+  // @todo - ensure that the estimates match the date.
   $estimate_options = partial_date_field_estimates($field);
 return;
 // TODO
@@ -586,21 +756,141 @@ function _partial_date_field_widget_settings_form($field, $instance) {
     '#default_value' => $settings['theme_overrides']['txt_long'],
     '#weight' => -4,
   );
+  $form['theme_overrides']['check_approximate'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Provide a checkbox to specify that the date is approximate'),
+    '#default_value' => !empty($settings['theme_overrides']['check_approximate']),
+    '#weight' => -3,
+  );
+  $form['theme_overrides']['range_inline'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Theme range widgets to be rendered inline.'),
+    '#default_value' => $has_range ? !empty($settings['theme_overrides']['range_inline']) : 0,
+    '#weight' => 0,
+    '#access' => $has_range,
+  );
+
   $form['hide_remove'] = array(
     '#type' => 'checkbox',
     '#title' => t('Hide the %remove checkbox', array('%remove' => t('Remove date', array(), array('context' => 'datetime')))),
     '#default_value' => !empty($settings['hide_remove']),
   );
+
+  $form['help_txt'] = array(
+    '#tree' => TRUE,
+    '#type' => 'fieldset',
+    '#title' => t('Inline help'),
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+    '#description' => t('This provides additional help per component, or a way to override the default description text.<br/>Allowed HTML tags: @tags',
+      array('@tags' => _field_filter_xss_display_allowed_tags())),
+  );
+
+  // Hide all bar current language.
+  $current_langcode = LANGUAGE_NONE;
+  if (!isset($settings['help_txt'])) {
+    $settings['help_txt'] = array();
+  }
+  foreach ($settings['help_txt'] as $langcode => $values) {
+    if ($current_langcode == $langcode) {
+      continue;
+    }
+    foreach ($values as $index => $value) {
+      $settings['help_txt'][$langcode][$index] = array(
+        '#type' => 'value',
+        '#value' => $value,
+      );
+    }
+  }
+
+  $help_txt = _partial_date_widget_help_text($instance, $current_langcode);
+  $form['help_txt'][$current_langcode]['components'] = array(
+    '#type' => 'textarea',
+    '#title' => t('Date components'),
+    '#default_value' => $help_txt['components'],
+    '#rows' => 3,
+    '#description' => t('Instructions to present under the date or date range components. No help shown by default.'),
+  );
+  $form['help_txt'][$current_langcode]['check_approximate'] = array(
+    '#type' => 'textarea',
+    '#title' => t('Date approximate checkbox'),
+    '#default_value' => $help_txt['check_approximate'],
+    '#rows' => 3,
+    '#description' => t('Instructions to present under the approximate checkbox if used. No help shown by default.'),
+  );
+
+  $form['help_txt'][$current_langcode]['txt_short'] = array(
+    '#type' => 'textarea',
+    '#title' => t('Short date description'),
+    '#default_value' => $help_txt['txt_short'],
+    '#rows' => 3,
+    '#description' => t('Instructions to present under the short date description if used. Default is %default', array('%default' => t('Short date description'))),
+  );
+  $form['help_txt'][$current_langcode]['txt_long'] = array(
+    '#type' => 'textarea',
+    '#title' => t('Long date description'),
+    '#default_value' => $help_txt['txt_long'],
+    '#rows' => 3,
+    '#description' => t('Instructions to present under the long date description if used. Default is %default', array('%default' => t('Longer description of date'))),
+  );
+  $form['help_txt'][$current_langcode]['_remove'] = array(
+    '#type' => 'textarea',
+    '#title' => t('Remove checkbox'),
+    '#default_value' => $help_txt['_remove'],
+    '#rows' => 3,
+    '#description' => t('Instructions to present under the remove checkbox if shown. No help shown by default.'),
+  );
   return $form;
 }
 
+function _partial_date_widget_help_text($instance, $langcode = NULL) {
+  if (!isset($langcode)) {
+    $langcode = LANGUAGE_NONE;
+  }
+  $settings = $instance['widget']['settings'];
+  $help_txt = array();
+  if (empty($settings['help_txt'][$langcode])) {
+    $help_txt = array();
+  }
+  else {
+    $help_txt += $settings['help_txt'][$langcode];
+  }
+  $help_txt += array(
+    'components' => '',
+    'check_approximate' => '',
+    'txt_short' => t('Short description of date'),
+    'txt_long' => t('Longer description of date'),
+    '_remove' => '',
+  );
+
+  return $help_txt;
+}
+
+function _partial_date_inline_float_css($component = TRUE) {
+  global $language;
+  // Language will be LANGUAGE_LTR (0) or LANGUAGE_RTL (1).
+  $margin = $component ? '0.5' : '1';
+  if ($language->direction) {
+    return "float: right; margin-left: {$margin}em;";
+  }
+  else {
+    return "float: left; margin-right: {$margin}em;";
+  }
+}
 /**
  * Implements hook_field_widget_form().
  */
 function _partial_date_field_widget_form(&$form, &$form_state, $field, $instance, $langcode, $items, $delta, $base) {
+  $current_langcode = LANGUAGE_NONE;
+  $help_txt = _partial_date_widget_help_text($instance, $current_langcode);
+
   $settings = $instance['widget']['settings'];
   $has_range = strpos($field['type'], 'range');
 
+  $inline_range_style = FALSE;
+  if ($has_range && !empty($settings['theme_overrides']['range_inline'])) {
+    $inline_range_style = ' style="' . _partial_date_inline_float_css(FALSE) . '"';
+  }
   // Fix the title on multi-value fields.
   if (empty($base['#title'])) {
     $base['#title_display'] = 'invisible';
@@ -620,7 +910,7 @@ function _partial_date_field_widget_form(&$form, &$form_state, $field, $instance
 
   // General styles to nicely format the element inline without having to load
   // external style sheets.
-  $css = variable_get('partial_date_component_field_inline_styles', 'float: left; margin-right: 0.5em;');
+  $css = variable_get('partial_date_component_field_inline_styles', _partial_date_inline_float_css());
   $css_txt = variable_get('partial_date_component_field_txt_inline_styles', 'float: left; clear: left;');
 
   // Correct the timezone based on the widget values.
@@ -646,11 +936,16 @@ function _partial_date_field_widget_form(&$form, &$form_state, $field, $instance
     '#component_styles' => $css,
     '#increments' => $increments,
   );
+  if ($inline_range_style) {
+    $base['from']['#attributes']['style'] = $inline_range_style;
+    $base['from']['#theme_wrappers'] = array('partial_date_inline_form_element');
+    $base['#theme'] = 'partial_date_range_inline_element';
+  }
 
   if ($has_range) {
     $base['_separator'] = array(
       '#type' => 'markup',
-      '#markup' => t('<div class="partial-date-separator">to</div>', array(), array('context' => 'datetime')),
+      '#markup' => t('<div class="partial-date-separator"' . $inline_range_style . '>to</div>', array(), array('context' => 'datetime')),
     );
     // Correct the timezone based on the widget values.
     $tz_to = empty($value) || empty($value['to']) || empty($value['to']['timezone']) ? NULL : $value['to']['timezone'];
@@ -666,15 +961,41 @@ function _partial_date_field_widget_form(&$form, &$form_state, $field, $instance
       '#component_styles' => $css,
       '#increments' => $increments,
     );
+    if ($inline_range_style) {
+      $base['to']['#attributes']['style'] = $inline_range_style;
+      $base['to']['#theme_wrappers'] = array('partial_date_inline_form_element');
+    }
   }
+
+  $base['#component_help'] = field_filter_xss($help_txt['components']);
+  if (!empty($settings['theme_overrides']['check_approximate'])) {
+    $base['check_approximate'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Approximation only', array(), array('context' => 'datetime')),
+      '#default_value' => empty($value['check_approximate']) ? 0 : $value['check_approximate'],
+    );
+    if (!empty($help_txt['check_approximate'])) {
+      $base['check_approximate']['#description'] = field_filter_xss($help_txt['check_approximate']);
+    }
+  }
+
+  // Calculate these for any JScript states.
+  $parents = array();
+  if (!empty($base['#field_parents'])) {
+    $parents = $base['#field_parents'];
+  }
+  elseif (!empty($base['#parents'])) {
+    $parents = $base['#parents'];
+  }
+  // field_partial_dates[und][0][check_approximate]
+  $parents[] = $field['field_name'];
+  $parents[] = $langcode;
 
   foreach (array('txt_short', 'txt_long') as $key) {
     if (!empty($settings['theme_overrides'][$key])) {
-      if ($key == 'txt_short') {
-        $description = t('Short description of date');
-      }
-      else {
-        $description = t('Longer description of date');
+      $description = NULL;
+      if (!empty($help_txt[$key])) {
+        $description = field_filter_xss($help_txt[$key]);
       }
 
       $base[$key] = array(
@@ -702,9 +1023,12 @@ function _partial_date_field_widget_form(&$form, &$form_state, $field, $instance
     '#title' => t('Remove date', array(), array('context' => 'datetime')),
     '#default_value' => 0,
     '#access' => empty($settings['hide_remove']),
-    '#prefix' => '<div class="partial-date-remove" ' . ($css ? ' style="' . $css . '"' : '') . '>',
+    '#prefix' => '<div class="partial-date-remove" ' . ($css_txt ? ' style="' . $css_txt . '"' : '') . '>',
     '#suffix' => '</div>',
   );
+  if (!empty($help_txt['_remove'])) {
+    $base['_remove']['#description'] = field_filter_xss($help_txt['_remove']);
+  }
 
   $base['#prefix'] = '<div class="clearfix">';
   $base['#suffix'] = '</div>';
@@ -777,8 +1101,8 @@ function partial_date_generate_date($timestamp = REQUEST_TIME, $timezone = NULL)
 
 /*
 Time
-a	Lowercase Ante meridiem and Post meridiem	am or pm
-A	Uppercase Ante meridiem and Post meridiem	AM or PM
+a  Lowercase Ante meridiem and Post meridiem  am or pm
+A  Uppercase Ante meridiem and Post meridiem  AM or PM
  */
 
 /**

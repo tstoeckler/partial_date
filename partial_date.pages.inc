@@ -41,7 +41,7 @@ function _partial_date_field_formatter_settings_form($field, $instance, $view_mo
   if (empty($settings['component_settings'])) {
     $settings['component_settings'] = partial_date_format_settings($format);
   }
-  $element['component_settings'] = partial_date_type_format_elements($settings['component_settings']);
+  $element['component_settings'] = partial_date_type_format_elements($settings['component_settings'], $field, $instance, $view_mode);
   $element['component_settings']['#tree'] = TRUE;
   $element['component_settings']['#prefix'] = '<div id="partial-date-custom-component-settings" class="' . $format . '">';
   $element['component_settings']['#suffix'] = '</div>';
@@ -49,10 +49,10 @@ function _partial_date_field_formatter_settings_form($field, $instance, $view_mo
   return $element;
 }
 
-function partial_date_type_format_elements($settings) {
+function partial_date_type_format_elements($settings, $field = NULL, $instance = NULL, $view_mode = NULL) {
   $elements['meridiem'] = array(
     '#type' => 'radios',
-    '#title' => t('Ante meridiem and Post meridiem  format'),
+    '#title' => t('Ante meridiem and Post meridiem format'),
     '#options' => partial_date_meridiem_options(),
     '#default_value' => !isset($settings['meridiem']) ? 'a' : $settings['meridiem'],
   );
@@ -64,7 +64,6 @@ function partial_date_type_format_elements($settings) {
     '#required' => TRUE,
     '#description' => t('This controls how year designation is handled: 1BC = 1BCE = -1 and 1AD = 1CE = 1.'),
   );
-
   $elements['display'] = array(
     '#type' => 'fieldset',
     '#title' => t('Component display'),
@@ -114,7 +113,7 @@ function partial_date_type_format_elements($settings) {
     '#description' => t('This separator is used to seperate date components in the range element. This defaults to " to " if this field is empty. Add spaces if you need spaces between the separator and the date values.'),
   );
 
-  $custom = array('c1' => t('Custom component 1'), 'c2' => t('Custom component 2'), 'c3' => t('Custom component 3'));
+  $custom = array('c1' => t('Custom component 1'), 'c2' => t('Custom component 2'), 'c3' => t('Custom component 3'), 'approx' => t('Approximation text'));
 
   foreach (partial_date_components() + $custom as $key => $label) {
     $component = $settings['components'][$key];
@@ -125,13 +124,16 @@ function partial_date_type_format_elements($settings) {
     $elements['components'][$key]['label'] = array(
       '#markup' => $label,
     );
-    if (in_array($key, array('c1', 'c2', 'c3'))) {
+    if (in_array($key, array('c1', 'c2', 'c3', 'approx'))) {
       $elements['components'][$key]['value'] = array(
         '#type' => 'textfield',
         '#title' => $label,
         '#title_display' => 'invisible',
         '#default_value' => $component['value'],
       );
+      if ($key == 'approx') {
+        $elements['components'][$key]['value']['#description'] = t('Only shows if the date is flagged as approximate.');
+      }
     }
     else {
       $elements['display'][$key] = array(
@@ -198,7 +200,7 @@ function theme_partial_date_format_settings_form($variables) {
     $form[$key]['weight']['#attributes']['class'] = array('partial-date-format-order-weight');
     $row = array();
     $row[] = drupal_render($form[$key]['label']);
-    if (in_array($key, array('c1', 'c2', 'c3'))) {
+    if (in_array($key, array('c1', 'c2', 'c3', 'approx'))) {
       $row[] = array('data' => drupal_render($form[$key]['value']), 'colspan' => 2);
     }
     else {
@@ -247,7 +249,6 @@ function partial_date_year_designation_options() {
   );
 }
 
-
 function partial_date_estimate_handling_options() {
   return array(
     'none' => t('Hide', array(), array('context' => 'datetime')),
@@ -288,7 +289,7 @@ function partial_date_component_format_options($component, array $additional_val
         'D' => t('A textual representation of a day, three letters.', array(), array('context' => 'datetime')),
         // 'N' => t('ISO-8601 numeric representation of the day of the week.', array(), array('context' => 'datetime')),
         // 'S' => t('English ordinal suffix for the day of the month.', array(), array('context' => 'datetime')),
-        'w' => t('Numeric representation of the day of the week	0 (for Sunday) through 6 (for Saturday).', array(), array('context' => 'datetime')),
+        'w' => t('Numeric representation of the day of the week  0 (for Sunday) through 6 (for Saturday).', array(), array('context' => 'datetime')),
       ),
       'hour' => array(
         'g' => t('12-hour format of an hour without leading zeros, 1 through 12.', array(), array('context' => 'datetime')),

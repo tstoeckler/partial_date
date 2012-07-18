@@ -114,7 +114,8 @@ function partial_date_field_info() {
  */
 function partial_date_field_settings_form($field, $instance, $has_data) {
   module_load_include('admin.inc', 'partial_date');
-  return partial_date_field_estimates_settings_form($field['settings']);
+  // Badly name, includes minimal components too.
+  return partial_date_field_estimates_settings_form($field['settings'], $field, $instance, $has_data);
 }
 
 /**
@@ -123,8 +124,11 @@ function partial_date_field_settings_form($field, $instance, $has_data) {
 function partial_date_field_load($entity_type, $entities, $field, $instances, $langcode, &$items, $age) {
   $has_range = strpos($field['type'], '_range');
   $estimates = partial_date_field_estimates($field);
+
   foreach ($entities as $id => $entity) {
     foreach ($items[$id] as $delta => &$item) {
+      $settings = $instances[$id]['widget']['settings'];
+
       // Generate a cleaner array based storage of the values.
       $item['data'] = empty($item['data']) ? array() : unserialize($item['data']);
 
@@ -132,6 +136,7 @@ function partial_date_field_load($entity_type, $entities, $field, $instances, $l
       if ($has_range) {
         $item['to'] = array();
       }
+      $item['check_approximate'] = empty($item['data']['check_approximate']) ? 0 : 1;
 
       foreach (partial_date_components() as $key => $title) {
         $item['from'][$key] = $item[$key];
@@ -265,7 +270,12 @@ function partial_date_field_widget_info() {
       'field types' => array('partial_date', 'partial_date_range'),
       'settings' => array(
         'tz_handling' => 'none',
-        'theme_overrides' => array('txt_short' => 0, 'txt_long' => 0),
+        'theme_overrides' => array(
+          'check_approximate' => 0,
+          'txt_short' => 0,
+          'txt_long' => 0,
+          'range_inline' => 0,
+        ),
         'granularity' => array(
           'from' => drupal_map_assoc(array_keys(partial_date_components())),
           'to' => drupal_map_assoc(array_keys(partial_date_components())),
@@ -279,6 +289,8 @@ function partial_date_field_widget_info() {
           'minute' => 1,
         ),
         'hide_remove' > 0,
+        // @todo: i18n support here.
+        'help_txt' => array(),
       ),
     ),
   );
@@ -306,19 +318,26 @@ function partial_date_field_widget_form(&$form, &$form_state, $field, $instance,
  * @see partial_date_field_validate().
  */
 function partial_date_field_widget_error($element, $error, $form, &$form_state) {
-  // TODO
-  return;
   switch ($error['error']) {
-    case 'partial_date_invalid_year_estimate':
-      form_error($element['year'], $error['message']);
+    case 'partial_date_incomplete_from':
+    case 'partial_date_incomplete_to':
+      $base_key = strpos($error['error'], 'from') ? 'from' : 'to';
+      if (isset($error['partial_date_component']) && isset($element[$base_key][$error['partial_date_component']])) {
+        form_error($element[$base_key][$error['partial_date_component']], $error['message']);
+      }
+      else {
+        form_error($element[$base_key], $error['message']);
+      }
       break;
 
-    case 'partial_date_invalid_year_estimate_to':
+    case 'partial_date_incomplete_txt_short':
+    case 'partial_date_incomplete_txt_long':
+      $base_key = strpos($error['error'], 'from') ? 'from' : 'to';
       form_error($element['year_to'], $error['message']);
       break;
 
     default:
-      form_error($element, $error['message']);
+      form_error($element['from'], $error['message']);
       break;
   }
 }
@@ -327,7 +346,7 @@ function partial_date_field_widget_error($element, $error, $form, &$form_state) 
  * Helper function to assign the correct components into an array that the
  * formatters can use.
  */
-function partial_date_field_widget_reduce_date_components($item, $is_start = TRUE) {
+function partial_date_field_widget_reduce_date_components($item, $is_start = TRUE, $is_approx = FALSE) {
   if (empty($item)) {
     return FALSE;
   }
@@ -427,6 +446,8 @@ function partial_date_field_formatter_settings_summary($field, $instance, $view_
  */
 function partial_date_field_formatter_view($object_type, $object, $field, $instance, $langcode, $items, $display) {
   $has_range = strpos($field['type'], 'range');
+  $widget_settings = $instance['widget']['settings'];
+
   $element = array();
   foreach ($items as $delta => $item) {
     $override = FALSE;
@@ -436,6 +457,7 @@ function partial_date_field_formatter_view($object_type, $object, $field, $insta
     $item += array(
       'txt_short' => NULL,
       'txt_long' => NULL,
+      'check_approximate' => 0,
     );
     switch ($display['settings']['use_override']) {
       case 'short':
@@ -472,12 +494,18 @@ function partial_date_field_formatter_view($object_type, $object, $field, $insta
     }
     else {
       $to = $from = FALSE;
+      // The additonal "Approximate only" checkbox.
+      $display['settings']['is_approximate'] = FALSE;
+      if (!empty($widget_settings['theme_overrides']['check_approximate'])) {
+        $display['settings']['is_approximate']  = !empty($item['check_approximate']);
+      }
       if (isset($item['from'])) {
         $from = partial_date_field_widget_reduce_date_components($item['from'], TRUE);
       }
       if (isset($item['to'])) {
         $to = partial_date_field_widget_reduce_date_components($item['to'], FALSE);
       }
+
       $markup = '';
       if ($to && $from) {
         $markup = partial_date_render_range($from, $to, $display['settings']);
@@ -485,6 +513,7 @@ function partial_date_field_formatter_view($object_type, $object, $field, $insta
       elseif ($to xor $from) {
         $markup = partial_date_render($from ? $from : $to, $display['settings']);
       }
+      unset($display['settings']['is_approximate']);
       if ($markup) {
         $element[$delta] = array('#markup' => $markup);
       }
@@ -525,11 +554,18 @@ function partial_date_render($item, $settings = array()) {
   $settings += array(
     'format' => 'short',
     'component_settings' => array(),
+    'is_approximate' => 0,
   );
   if ($settings['format'] != 'custom') {
     $settings['component_settings'] = partial_date_format_settings($settings['format']);
   }
-  return theme('partial_date', array('item' => $item, 'settings' => $settings['component_settings'], 'format' => $settings['format']));
+
+  return theme('partial_date', array(
+    'item' => $item,
+    'settings' => $settings['component_settings'],
+    'format' => $settings['format'],
+    'is_approximate' => $settings['is_approximate'],
+  ));
 }
 
 function partial_date_format_types($add_custom = FALSE) {
@@ -574,6 +610,7 @@ function partial_date_format_default_options($format) {
         'timezone' => 'none',
       ),
       'components' => array(
+        'approx' => array('value' => '', 'weight' => -1),
         'year' => array('format' => 'y-ce', 'weight' => 0, 'empty' => ''),
         'month' => array('format' => 'm', 'weight' => 1, 'empty' => ''),
         'day' => array('format' => 'j', 'weight' => 2, 'empty' => ''),
@@ -606,6 +643,7 @@ function partial_date_format_default_options($format) {
         'timezone' => 'date_only',
       ),
       'components' => array(
+        'approx' => array('value' => '', 'weight' => -1),
         'year' => array('format' => 'Y-ce', 'weight' => 0, 'empty' => ''),
         'month' => array('format' => 'M', 'weight' => 1, 'empty' => ''),
         'day' => array('format' => 'j-S', 'weight' => 2, 'empty' => ''),
@@ -638,6 +676,7 @@ function partial_date_format_default_options($format) {
         'timezone' => 'date_only',
       ),
       'components' => array(
+        'approx' => array('value' => '', 'weight' => -1),
         'year' => array('format' => 'Y-ce', 'weight' => 0, 'empty' => ''),
         'month' => array('format' => 'F', 'weight' => 1, 'empty' => ''),
         'day' => array('format' => 'j-S', 'weight' => 2, 'empty' => ''),
@@ -706,6 +745,10 @@ function partial_date_theme() {
     'partial_date_element' => array(
       'render element' => 'element',
     ),
+    'partial_date_range_inline_element' => array(
+      'render element' => 'element',
+      'file' => 'partial_date.theme.inc',
+    ),
     'partial_date' => array(
       'variables' => array('item' => NULL, 'format' => 'short', 'settings' => array()),
     ),
@@ -715,6 +758,10 @@ function partial_date_theme() {
     'partial_date_format_settings_form' => array(
       'render element' => 'form',
       'file' => 'partial_date.pages.inc',
+    ),
+    'partial_date_inline_form_element' => array(
+      'render element' => 'element',
+      'file' => 'partial_date.theme.inc',
     ),
   );
 }
@@ -761,6 +808,7 @@ function theme_partial_date($variables) {
   $item = $variables['item'];
   $settings = $variables['settings'];
   $settings['format'] = $variables['format'];
+  $settings['is_approximate'] = !empty($variables['is_approximate']);
   return partial_date_format($item, $settings);
 }
 
@@ -1483,19 +1531,27 @@ function _partial_date_render_component($key, $item, $field, $format) {
 function partial_date_format($item, array $settings = array()) {
   $components = array();
   uasort($settings['components'], 'partial_date_sort');
-
-  if (!isset($settings['meridiem'])) {
-    // Skip unless we have a 12 hour format.
-    $settings['meridiem'] = '';
-    if (isset($settings['components']['hour'])) {
-      if ($settings['components']['hour'] == 'h' || $settings['components']['hour'] == 'g') {
-        $settings['meridiem'] = 'a';
-      }
+  // Skip unless we have a 12 hour format, then enforce it.
+  if (isset($settings['components']['hour'])
+      && ($settings['components']['hour'] == 'h' || $settings['components']['hour'] == 'g')) {
+    if (empty($settings['meridiem'])) {
+      $settings['meridiem'] = 'a';
     }
   }
-  if (!isset($settings['year_designation'])) {
-    // Are there any cases where we do not want this?
+  else {
+    $settings['meridiem'] = '';
+  }
+
+  // Hide year designation if no valid year.
+  if (empty($item['year'])) {
+    $settings['year_designation'] = '';
+  }
+  elseif (!isset($settings['year_designation'])) {
     $settings['year_designation'] = 'ce';
+  }
+
+  if (empty($settings['is_approximate']) || !isset($settings['is_approximate'])) {
+    $settings['components']['approx'] = '';
   }
 
   $valid_components = partial_date_components();
@@ -1588,7 +1644,6 @@ function partial_date_format($item, array $settings = array()) {
 function partial_date_format_component($value, $format, &$date, $additional = array()) {
 
   $additional += array(
-    'meridiem' => 'a',
     'year_designation' => 'ce',
   );
   // If dealing with 12 hour times, recalculate the value.
@@ -1599,6 +1654,12 @@ function partial_date_format_component($value, $format, &$date, $additional = ar
     elseif ($value == 0) {
       $value = '12';
     }
+    if (empty($additional['meridiem'])) {
+      $additional['meridiem'] = 'a';
+    }
+  }
+  else {
+    $additional['meridiem'] = '';
   }
 
   // Add suffixes for year and time formats
@@ -1629,7 +1690,7 @@ function partial_date_format_component($value, $format, &$date, $additional = ar
     case 'M':
       return partial_date_month_abbreviations($value) . $suffix;
 
-    // Numeric representation of the day of the week	0 (for Sunday) through 6 (for Saturday)
+    // Numeric representation of the day of the week  0 (for Sunday) through 6 (for Saturday)
     case 'w':
       if (!empty($date['year']) && !empty($date['month'])) {
         return partial_date_day_of_week($date['year'], $date['month'], $value) . $suffix;
@@ -1722,23 +1783,23 @@ function partial_date_format_component($value, $format, &$date, $additional = ar
  */
 function partial_date_day_of_week($year, $month, $day) {
   $greg_correction = 0;
-	if ($year < 1582 || ($year == 1582 && ($month < 10 || ($month == 10 && $day < 15)))) {
-		$greg_correction = 3;
-	}
+  if ($year < 1582 || ($year == 1582 && ($month < 10 || ($month == 10 && $day < 15)))) {
+    $greg_correction = 3;
+  }
 
-	if ($month > 2) {
-	  $month -= 2;
+  if ($month > 2) {
+    $month -= 2;
   }
   else {
-	  $month += 10;
-	  $year--;
-	}
+    $month += 10;
+    $year--;
+  }
 
-	$day = floor((13 * $month - 1) / 5) +
-	       $day + ($year % 100) +
-	       floor(($year % 100) / 4) +
-	       floor(($year / 100) / 4) - 2 *
-	       floor($year / 100) + 77 + $greg_correction;
+  $day = floor((13 * $month - 1) / 5) +
+         $day + ($year % 100) +
+         floor(($year % 100) / 4) +
+         floor(($year / 100) / 4) - 2 *
+         floor($year / 100) + 77 + $greg_correction;
 
-	return $day - 7 * floor($day / 7);
+  return $day - 7 * floor($day / 7);
 }
