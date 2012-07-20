@@ -13,7 +13,6 @@ function _partial_date_field_formatter_settings_form($field, $instance, $view_mo
   $settings = $display['settings'];
 
   $element = array();
-
   $element['use_override'] = array(
     '#title' => t('Use date descriptions rather than date'),
     '#type' => 'radios',
@@ -22,6 +21,7 @@ function _partial_date_field_formatter_settings_form($field, $instance, $view_mo
     '#options' => partial_date_txt_override_options(),
     '#description' => t('This setting allows date values to be replaced with user specified date descriptions, if applicable. This will use the first non-empty value.'),
   );
+
   $format = empty($settings['format']) ? 'short' : $settings['format'];
   $element['format'] = array(
     '#title' => t('Date format'),
@@ -113,10 +113,15 @@ function partial_date_type_format_elements($settings, $field = NULL, $instance =
     '#description' => t('This separator is used to seperate date components in the range element. This defaults to " to " if this field is empty. Add spaces if you need spaces between the separator and the date values.'),
   );
 
-  $custom = array('c1' => t('Custom component 1'), 'c2' => t('Custom component 2'), 'c3' => t('Custom component 3'), 'approx' => t('Approximation text'));
+  $custom = array(
+    'c1' => t('Custom component 1'),
+    'c2' => t('Custom component 2'),
+    'c3' => t('Custom component 3'),
+    'approx' => t('Approximation text'),
+  );
 
   foreach (partial_date_components() + $custom as $key => $label) {
-    $component = $settings['components'][$key];
+    $component = empty($settings['components'][$key]) ? array('weight' => 0) : $settings['components'][$key];
     $elements['components'][$key] = array(
       '#weight' => $component['weight'],
     );
@@ -125,17 +130,25 @@ function partial_date_type_format_elements($settings, $field = NULL, $instance =
       '#markup' => $label,
     );
     if (in_array($key, array('c1', 'c2', 'c3', 'approx'))) {
+      $component += array(
+        'value' => '',
+        'empty' => '',
+        'weight' => 0,
+      );
       $elements['components'][$key]['value'] = array(
         '#type' => 'textfield',
         '#title' => $label,
         '#title_display' => 'invisible',
-        '#default_value' => $component['value'],
+        '#default_value' => isset($component['value']) ? $component['value'] : '',
       );
       if ($key == 'approx') {
         $elements['components'][$key]['value']['#description'] = t('Only shows if the date is flagged as approximate.');
       }
     }
     else {
+      $component += array(
+        'format' => '',
+      );
       $elements['display'][$key] = array(
         '#type' => 'select',
         '#title' => t('Display source for %label', array('%label' => $label)),

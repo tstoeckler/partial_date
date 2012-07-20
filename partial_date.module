@@ -459,6 +459,7 @@ function partial_date_field_formatter_view($object_type, $object, $field, $insta
       'txt_long' => NULL,
       'check_approximate' => 0,
     );
+
     switch ($display['settings']['use_override']) {
       case 'short':
         if (strlen($item['txt_short'])) {
@@ -489,38 +490,54 @@ function partial_date_field_formatter_view($object_type, $object, $field, $insta
         break;
     }
 
-    if ($override !== FALSE) {
-      $element[$delta] = array('#markup' => check_plain($override));
-    }
-    else {
-      $to = $from = FALSE;
-      // The additonal "Approximate only" checkbox.
-      $display['settings']['is_approximate'] = FALSE;
-      if (!empty($widget_settings['theme_overrides']['check_approximate'])) {
-        $display['settings']['is_approximate']  = !empty($item['check_approximate']);
-      }
-      if (isset($item['from'])) {
-        $from = partial_date_field_widget_reduce_date_components($item['from'], TRUE);
-      }
-      if (isset($item['to'])) {
-        $to = partial_date_field_widget_reduce_date_components($item['to'], FALSE);
-      }
+    $output = FALSE;
+    $to = $from = FALSE;
 
-      $markup = '';
-      if ($to && $from) {
-        $markup = partial_date_render_range($from, $to, $display['settings']);
-      }
-      elseif ($to xor $from) {
-        $markup = partial_date_render($from ? $from : $to, $display['settings']);
-      }
-      unset($display['settings']['is_approximate']);
-      if ($markup) {
-        $element[$delta] = array('#markup' => $markup);
-      }
+    // The additonal "Approximate only" checkbox.
+    $display['settings']['is_approximate'] = FALSE;
+    if (!empty($widget_settings['theme_overrides']['check_approximate'])) {
+      $display['settings']['is_approximate']  = !empty($item['check_approximate']);
+    }
+    if (isset($item['from'])) {
+      $from = partial_date_field_widget_reduce_date_components($item['from'], TRUE);
+    }
+    if (isset($item['to'])) {
+      $to = partial_date_field_widget_reduce_date_components($item['to'], FALSE);
+    }
+
+    $rendered_date = '';
+    if ($to && $from) {
+      $rendered_date = partial_date_render_range($from, $to, $display['settings']);
+    }
+    elseif ($to xor $from) {
+      $rendered_date = partial_date_render($from ? $from : $to, $display['settings']);
+    }
+    unset($display['settings']['is_approximate']);
+
+    $output = $override !== FALSE ? check_plain($override) : $rendered_date;
+
+    if ($output) {
+      $element[$delta] = array(
+        '#theme' => 'partial_date_markup',
+        '#markup' => $output,
+        '#rendered_date' => $rendered_date,
+        '#dates' => array('from' => $from, 'to' => $to),
+        '#item' => $item,
+        '#entity_type' => $object_type,
+        '#entity' => $object,
+        '#field' => $field,
+        '#instance' => $instance,
+        '#langcode' => $langcode,
+        '#display' => $display,
+      );
     }
   }
-
   return $element;
+}
+
+function theme_partial_date_markup($variables) {
+  $element = $variables['element'];
+  return $element['#markup'];
 }
 
 function partial_date_render_range($from = NULL, $to = NULL, $settings = array()) {
@@ -754,6 +771,10 @@ function partial_date_theme() {
     ),
     'partial_date_range' => array(
       'variables' => array('from' => NULL, 'to' => NULL, 'settings' => array()),
+    ),
+    // Used by field formatters when rendering dates that are not overridden.
+    'partial_date_markup' => array(
+      'render element' => 'element',
     ),
     'partial_date_format_settings_form' => array(
       'render element' => 'form',
