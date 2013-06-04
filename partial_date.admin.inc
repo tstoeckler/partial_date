@@ -281,6 +281,7 @@ function _partial_date_field_presave($entity_type, $entity, $field, $instance, $
     $items[$delta] = array();
     $items[$delta]['txt_short'] = isset($item['txt_short']) ? $item['txt_short'] : NULL;
     $items[$delta]['txt_long'] = isset($item['txt_long']) ? $item['txt_long'] : NULL;
+    $item['from'] = empty($item['from']) ? array() : $item['from'];
     $items[$delta] += partial_date_field_presave_generate_storage_date($item['from']);
 
     if ($has_range) {
