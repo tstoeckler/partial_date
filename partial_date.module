@@ -1150,7 +1150,7 @@ function partial_date_month_abbreviations($month) {
       1 => 'Jan', 2 => 'Feb', 3 => 'Mar', 4 => 'Apr', 5 => 'May', 6 => 'Jun',
       7 => 'Jul', 8 => 'Aug', 9 => 'Sep', 10 => 'Oct', 11 => 'Nov', 12 => 'Dec');
     foreach ($month_names as $key => $month_name) {
-      $month_names[$key] = t($month_name, array(), array('context' => 'datetime'));
+      $month_names[$key] = t($month_name);
     }
   }
   if ($month) {
@@ -1171,7 +1171,7 @@ function partial_date_month_names($month) {
       10 => 'October', 11 => 'November', 12 => 'December');
 
     foreach ($month_names as $key => $month_name) {
-      $month_names[$key] = t($month_name, array(), array('context' => 'datetime'));
+      $month_names[$key] = t($month_name);
     }
   }
   if ($month) {
@@ -1202,7 +1202,7 @@ function partial_date_weekday_names($week_day_number) {
       4 => 'Thursday', 5 => 'Friday', 6 => 'Saturday');
 
     foreach ($day_names as $key => $day_name) {
-      $day_names[$key] = t($day_name, array(), array('context' => 'datetime'));
+      $day_names[$key] = t($day_name);
     }
   }
   if ($week_day_number) {
@@ -1220,14 +1220,11 @@ function partial_date_year_designation_decorator($year, $designation = 'ce') {
   static $designation_suffixes;
   if (empty($designation_suffixes)) {
     $designation_suffixes = array(
-      'BC' => 'BC',
-      'AD' => 'AD',
-      'BCE' => 'BCE',
-      'CE' => 'CE',
+      'BC' => t('BC', array(), array('context' => 'datetime')),
+      'AD' => t('AD', array(), array('context' => 'datetime')),
+      'BCE' => t('BCE', array(), array('context' => 'datetime')),
+      'CE' => t('CE', array(), array('context' => 'datetime')),
     );
-    foreach ($designation_suffixes as $key => $designation_suffix) {
-      $designation_suffixes[$key] = t($designation_suffix, array(), array('context' => 'datetime'));
-    }
   }
 
   if (empty($year) || !is_numeric($year)) {
@@ -1262,14 +1259,11 @@ function partial_date_day_ordinal_suffix($day) {
   static $suffixes;
   if (empty($suffixes)) {
     $suffixes = array(
-      'st' => 'st',
-      'nd' => 'nd',
-      'rd' => 'rd',
-      'th' => 'th',
+      'st' => t('st', array(), array('context' => 'ordinal abbreviation')),
+      'nd' => t('nd', array(), array('context' => 'ordinal abbreviation')),
+      'rd' => t('rd', array(), array('context' => 'ordinal abbreviation')),
+      'th' => t('th', array(), array('context' => 'ordinal abbreviation')),
     );
-    foreach ($suffixes as $key => $suffix) {
-      $suffixes[$key] = t($suffix, array(), array('context' => 'datetime'));
-    }
   }
 
   switch (($day = abs($day)) % 100) {
