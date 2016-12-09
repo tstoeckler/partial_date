@@ -10,7 +10,5 @@ use Drupal\Core\Config\Entity\ConfigEntityInterface;
  * @author CosminFr
  */
 interface PartialDateFormatInterface extends ConfigEntityInterface {
-  //Add get/set methods for your configuration properties here.
 
-  
 }
