@@ -27,7 +27,5 @@ estimates:
         - '18|22|Evening'
         - '0|1|Midnight'
         - '18|6|Night'
-    minute:
-    second:
-_core:
-  default_config_hash: I9g7ge8pUcTuQxGwCofIjVyGOkwgxRJ6DqAkdVWmW2k
+    minute: []
+    second: []
