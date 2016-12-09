@@ -73,10 +73,8 @@ class PartialDateFormatEditForm extends EntityForm {
 
   private function buildDisplayElements($components, PartialDateFormat $format) {
     $elements = array(
-      '#type' => 'fieldset',
+      '#type' => 'details',
       '#title' => $this->t('Component display'),
-      '#collapsible' => TRUE,
-      '#collapsed' => TRUE,
     );
 
     foreach ($components as $key => $label) {
@@ -100,17 +98,15 @@ class PartialDateFormatEditForm extends EntityForm {
   
   private function buildSeparatorElements(PartialDateFormat $format) {
     $elements = array(
-      '#type' => 'fieldset',
+      '#type' => 'details',
       '#title' => $this->t('Component separators'),
-      '#collapsible' => TRUE,
-      '#collapsed' => TRUE,
     );
     $elements['date'] = array(
       '#type' => 'textfield',
       '#title' => $this->t('Date separators'),
       '#maxlength' => 15,
       '#size' => 8,
-      '#default_value' => $format->separator['date'] ?: '/',
+      '#default_value' => $format->separator['date'],
       '#description' => $this->t('This separator is used within date part. Empty value is allowed (ex. 20151231). Add spaces if you needed between the separator and the date values.'),
     );
     $elements['time'] = array(
@@ -118,7 +114,7 @@ class PartialDateFormatEditForm extends EntityForm {
       '#title' => $this->t('Time separators'),
       '#maxlength' => 15,
       '#size' => 8,
-      '#default_value' => $format->separator['time'] ?: ':',
+      '#default_value' => $format->separator['time'],
       '#description' => $this->t('This separator is used within time component. Empty value is allowed. Add spaces if needed.'),
     );
     $elements['datetime'] = array(
@@ -126,7 +122,7 @@ class PartialDateFormatEditForm extends EntityForm {
       '#title' => $this->t('Date and time separators'),
       '#size' => 8,
       '#maxlength' => 15,
-      '#default_value' => $format->separator['datetime'] ?: ' ',
+      '#default_value' => $format->separator['datetime'],
       '#description' => $this->t('This separator is used between date and time components. '),
       '#attributes' => array('class' => array('field--label-inline')),
     );
@@ -135,7 +131,7 @@ class PartialDateFormatEditForm extends EntityForm {
       '#title' => $this->t('Other separators'),
       '#size' => 8,
       '#maxlength' => 15,
-      '#default_value' => $format->separator['other'] ?: ' ',
+      '#default_value' => $format->separator['other'],
       '#description' => $this->t('This separator may be used with year estimations. TODO add better description or deprecate.'),
       '#attributes' => array('class' => array('field--label-inline')),
     );
@@ -144,8 +140,8 @@ class PartialDateFormatEditForm extends EntityForm {
       '#title' => $this->t('Range separator'),
       '#size' => 8,
       '#maxlength' => 15,
-      '#default_value' => $format->separator['range'] ?: ' to ',
-      '#description' => $this->t('This separator is used to seperate date components in the range element. This defaults to " to " if this field is empty. Add spaces if you need spaces between the separator and the date values.'),
+      '#default_value' => $format->separator['range'],
+      '#description' => $this->t('This separator is used to seperate date components in the range element. Add spaces if you need spaces between the separator and the date values.'),
       '#attributes' => array('class' => array('field--label-inline')),
     );
     return $elements;
@@ -154,7 +150,7 @@ class PartialDateFormatEditForm extends EntityForm {
   private function buildComponentsTable($components, PartialDateFormat $format) {
     $table = array(
       '#type' => 'table',
-      '#header' => array($this->t('Component'), $this->t('Weight'), $this->t('Value format'), $this->t('Value empty text') ),
+      '#header' => array($this->t('Component'), $this->t('Value format'), $this->t('Value empty text'), $this->t('Weight')),
       '#empty' => $this->t('This should not be empty. Try re-installing Partial Date module.'),
       '#tableselect' => FALSE,
       '#tabledrag' => array(
@@ -172,21 +168,14 @@ class PartialDateFormatEditForm extends EntityForm {
       $table[$key]['#attributes']['class'][] = 'draggable';
       $table[$key]['#weight'] = $component['weight'];
       $table[$key]['label']['#plain_text'] = $label;
-      $table[$key]['weight'] = array(
-        '#type' => 'weight',
-        '#title' => $this->t('Weight for %label', array('%label' => $label)),
-        '#title_display' => 'invisible',
-        '#default_value' => $component['weight'],
-        '#attributes' => array('class' => array('partial-date-format-order-weight')),
-        '#required' => TRUE,
-      );
-      
+
       if (in_array($key, array('c1', 'c2', 'c3', 'approx'))) {
         $table[$key]['value'] = array(
           '#type' => 'textfield',
           '#title' => $label,
           '#title_display' => 'invisible',
           '#default_value' => $component['value'],
+          '#wrapper_attributes' => array('colspan' => 2),
         );
         if ($key == 'approx') {
           $table[$key]['value']['#description'] = $this->t('Only shows if the date is flagged as approximate.');
@@ -210,6 +199,15 @@ class PartialDateFormatEditForm extends EntityForm {
           '#size' => 8,
         );
       }
+
+      $table[$key]['weight'] = array(
+        '#type' => 'weight',
+        '#title' => $this->t('Weight for %label', array('%label' => $label)),
+        '#title_display' => 'invisible',
+        '#default_value' => $component['weight'],
+        '#attributes' => array('class' => array('partial-date-format-order-weight')),
+        '#required' => TRUE,
+      );
     }
     
     return $table;

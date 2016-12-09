@@ -53,7 +53,7 @@ class PartialDateFormat extends ConfigEntityBase implements PartialDateFormatInt
    * @var string
    * This controls how year designation is handled: 1BC = 1BCE = -1 and 1AD = 1CE = 1.
    */
-  public $year_designation = 'bc';
+  public $year_designation = 'ce';
   
   /**
    * @var array
@@ -93,7 +93,7 @@ class PartialDateFormat extends ConfigEntityBase implements PartialDateFormatInt
     'date' => '/',
     'time' => ':',
     'datetime' => ' ',
-    'range' => ' - ',
+    'range' => ' to ',
     'other' => ' ',
   );
   
