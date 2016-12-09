@@ -1,4 +1,5 @@
 <?php
+namespace Drupal\partial_date;
 
 /**
  * TODO: This is a placeholder to eventually provide a exposed list filter

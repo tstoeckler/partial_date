@@ -1,0 +1,33 @@
+langcode: en
+partial_date_component_field_txt_inline_styles: 'float: left; clear: left;'
+partial_date_component_field_inline_styles: '???'
+estimates:
+    year:
+        - '-60000|1600|Pre-colonial'
+        - '1500|1599|16th century'
+        - '1600|1699|17th century'
+        - '1700|1799|18th century'
+        - '1800|1899|19th century'
+        - '1900|1999|20th century'
+        - '2000|2099|21st century'
+    month:
+        - '11|1|Winter'
+        - '2|4|Spring'
+        - '5|7|Summer'
+        - '8|10|Autumn'
+    day:
+        - '0|12|The start of the month'
+        - '10|20|The middle of the month'
+        - '18|31|The end of the month'
+    hour:
+        - '6|18|Day time'
+        - '6|12|Morning'
+        - '12|13|Noon'
+        - '12|18|Afternoon'
+        - '18|22|Evening'
+        - '0|1|Midnight'
+        - '18|6|Night'
+    minute:
+    second:
+_core:
+  default_config_hash: I9g7ge8pUcTuQxGwCofIjVyGOkwgxRJ6DqAkdVWmW2k

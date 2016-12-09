@@ -11,7 +11,7 @@
 function theme_partial_date_inline_form_element($variables) {
   $element = &$variables['element'];
   // This is also used in the installer, pre-database setup.
-  $t = get_t();
+  $t = 't';
 
   // This function is invoked as theme wrapper, but the rendered form element
   // may not necessarily have been processed by form_builder().
@@ -36,7 +36,11 @@ function theme_partial_date_inline_form_element($variables) {
   if (!empty($element['#attributes']['disabled'])) {
     $attributes['class'][] = 'form-disabled';
   }
-  if ($css = variable_get('partial_date_component_field_inline_range_styles', _partial_date_inline_float_css())) {
+  // @FIXME
+// Could not extract the default value because it is either indeterminate, or
+// not scalar. You'll need to provide a default value in
+// config/install/partial_date.settings.yml and config/schema/partial_date.schema.yml.
+if ($css = \Drupal::config('partial_date.settings')->get('partial_date_component_field_inline_range_styles')) {
     $attributes['style'] = $css;
   }
   $output = '<div' . drupal_attributes($attributes) . '>' . "\n";
@@ -51,13 +55,31 @@ function theme_partial_date_inline_form_element($variables) {
   switch ($element['#title_display']) {
     case 'before':
     case 'invisible':
-      $output .= ' ' . theme('form_element_label', $variables);
+      // @FIXME
+// theme() has been renamed to _theme() and should NEVER be called directly.
+// Calling _theme() directly can alter the expected output and potentially
+// introduce security issues (see https://www.drupal.org/node/2195739). You
+// should use renderable arrays instead.
+// 
+// 
+// @see https://www.drupal.org/node/2195739
+// $output .= ' ' . theme('form_element_label', $variables);
+
       $output .= ' ' . $prefix . $element['#children'] . $suffix . "\n";
       break;
 
     case 'after':
       $output .= ' ' . $prefix . $element['#children'] . $suffix;
-      $output .= ' ' . theme('form_element_label', $variables) . "\n";
+      // @FIXME
+// theme() has been renamed to _theme() and should NEVER be called directly.
+// Calling _theme() directly can alter the expected output and potentially
+// introduce security issues (see https://www.drupal.org/node/2195739). You
+// should use renderable arrays instead.
+// 
+// 
+// @see https://www.drupal.org/node/2195739
+// $output .= ' ' . theme('form_element_label', $variables) . "\n";
+
       break;
 
     case 'none':
@@ -81,9 +103,9 @@ function theme_partial_date_range_inline_element($variables) {
   $output = '<div class="clearfix partial-date-inline-range">';
   if (isset($element['from']) && isset($element['to'])) {
     $output .= '<div class="clearfix">';
-    $output .= drupal_render($element['from']);
-    $output .= drupal_render($element['_separator']);
-    $output .= drupal_render($element['to']);
+    $output .= \Drupal::service("renderer")->render($element['from']);
+    $output .= \Drupal::service("renderer")->render($element['_separator']);
+    $output .= \Drupal::service("renderer")->render($element['to']);
     $output .= '</div>';
     if (!empty($element['#component_help'])) {
       $output .= '<div class="description">' . $element['#component_help'] . '</div>';

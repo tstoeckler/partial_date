@@ -1,0 +1,172 @@
+partial_date.settings:
+  type: mapping
+  label: Settings
+  mapping:
+    partial_date_component_field_txt_inline_styles:
+      type: string
+      label: txt_inline_styles
+    partial_date_component_field_inline_styles:
+      type: string
+      label: inline_styles
+    langcode:
+        type: string
+        label: 'Language code'
+    estimates.*:
+        type: sequence
+        label: estimates
+        sequence:
+            type: string
+
+partial_date.format.*:
+    type: config_entity
+    label: 'Partial date format'
+    mapping:
+        id:
+            type: string
+            label: 'ID'
+        label:
+            type: string
+            label: 'Label'
+        meridiem: 
+            type: string
+            label: 'Meridiem'
+        year_designation:
+            type: string
+            label: 'Year Designation'
+        display:
+            type: partial_date.format.display
+            label: 'Display'
+        components:
+            type: partial_date.format.components
+            label: 'Components'
+        separator:
+            type: partial_date.format.separator
+            label: 'Separator'
+
+partial_date.format.display:
+    type: mapping
+    label: 'Display'
+    mapping:
+        year: 
+            type: string
+            label: 'Year'
+            default: 'estimate_label'
+        month: 
+            type: string
+            label: 'Year'
+            default: 'estimate_label'
+        day: 
+            type: string
+            label: 'Year'
+            default: 'estimate_label'
+        hour: 
+            type: string
+            label: 'Year'
+            default: 'estimate_label'
+        minute:
+            type: string
+            label: 'Year'
+            default: 'estimate_label'
+        second: 
+            type: string
+            label: 'Year'
+            default: 'none'
+        timezone: 
+            type: string
+            label: 'Year'
+            default: 'none'
+
+partial_date.format.separator:
+    type: mapping
+    label: 'Separator'
+    mapping:
+        date: 
+            type: string
+            label: 'Date'
+            default: '/'
+        time: 
+            type: string
+            label: 'Time'
+            default: ':'
+        datetime: 
+            type: string
+            label: 'Date and time'
+            default: ' '
+        range: 
+            type: string
+            label: 'Range'
+            default: ' - '
+        other:
+            type: string
+            label: 'Other'
+            default: ' '
+
+partial_date.format.components:
+    type: mapping
+    label: 'Components'
+    mapping:
+        approx:
+            type: partial_date.format.component_value
+            label: 'approx'
+        year: 
+            type: partial_date.format.component_format
+            label: 'year'
+            default: 'estimate_label'
+        month: 
+            type: partial_date.format.component_format
+            label: 'month'
+            default: 'estimate_label'
+        day: 
+            type: partial_date.format.component_format
+            label: 'day'
+            default: 'estimate_label'
+        hour: 
+            type: partial_date.format.component_format
+            label: 'hour'
+            default: 'estimate_label'
+        minute:
+            type: partial_date.format.component_format
+            label: 'minute'
+            default: 'estimate_label'
+        second: 
+            type: partial_date.format.component_format
+            label: 'second'
+            default: 'none'
+        timezone: 
+            type: partial_date.format.component_format
+            label: 'timezone'
+            default: 'none'
+        c1:
+            type: partial_date.format.component_value
+            label: 'custom1'
+        c2:
+            type: partial_date.format.component_value
+            label: 'custom2'
+        c3:
+            type: partial_date.format.component_value
+            label: 'custom3'
+
+partial_date.format.component_value:
+    type: mapping
+    label: 'Components'
+    mapping:
+        value:
+            type: string
+            label: 'value'
+        weight: 
+            type: integer
+            label: 'weight'
+
+partial_date.format.component_format:
+    type: mapping
+    label: 'Components'
+    mapping:
+        format:
+            type: string
+            label: 'format'
+        weight: 
+            type: integer
+            label: 'weight'
+        empty: 
+            type: string
+            label: 'empty'
