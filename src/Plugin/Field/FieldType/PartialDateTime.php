@@ -182,12 +182,10 @@ class PartialDateTime extends FieldItemBase {
   }
 
   /**
-   * Helper function to duplicate the same settings on both the instance and field
-   * settings.
+   * {@inheritdoc}
    */
   public function fieldSettingsForm(array $form, \Drupal\Core\Form\FormStateInterface $form_state) {
     $settings = $this->getSettings();
-    $field    = $this->getFieldDefinition();
     $elements = array();
     $elements['minimum_components'] = array(
       '#type' => 'fieldset',
@@ -224,10 +222,9 @@ class PartialDateTime extends FieldItemBase {
     return $elements;
   }
 
-  public function preSave() {
-    parent::preSave();
-  }
-
+  /**
+   * {@inheritdoc}
+   */
   public static function defaultFieldSettings() {
     return array(
       'path' => '',

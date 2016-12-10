@@ -8,9 +8,6 @@ partial_date.settings:
     partial_date_component_field_inline_styles:
       type: string
       label: inline_styles
-    langcode:
-      type: string
-      label: 'Language code'
 
 partial_date.format.*:
   type: config_entity

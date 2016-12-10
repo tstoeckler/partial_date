@@ -76,12 +76,6 @@ class PartialDateTimeRange extends PartialDateTime {
     return $schema;
   }
 
-  public function delete() {
-    $this->deleteConfig('partial_date.settings');
-    $this->deleteConfig('partial_date.format');
-    parent::delete();
-  }
-
   /**
    * {@inheritdoc}
    */
