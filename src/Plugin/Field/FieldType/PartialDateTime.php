@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\partial_date\Plugin\Field\FieldType\PartialDateTime.
- */
-
 namespace Drupal\partial_date\Plugin\Field\FieldType;
 
 use Drupal\Core\Field\FieldItemBase;
@@ -22,10 +17,7 @@ use Drupal\Core\TypedData\DataDefinition;
  *   default_widget = "partial_date_widget",
  *   default_formatter = "partial_date_formatter",
  * )
- *
- * 
  */
-
 class PartialDateTime extends FieldItemBase {
 
   /**
@@ -157,7 +149,6 @@ class PartialDateTime extends FieldItemBase {
     return $schema;
   }
 
-
   protected function deleteConfig($configName) {
     //$config = \Drupal::service('config.factory')->getEditable($configName);
     $config = \Drupal::configFactory()->getEditable($configName);
@@ -215,7 +206,6 @@ class PartialDateTime extends FieldItemBase {
    * settings.
    */
   public function fieldSettingsForm(array $form, \Drupal\Core\Form\FormStateInterface $form_state) {
-//    //parent::fieldSettingsForm($form, $form_state);
     $settings = $this->getSettings();
     $field    = $this->getFieldDefinition();
     $elements = array();
@@ -272,11 +262,11 @@ class PartialDateTime extends FieldItemBase {
     );
     return $elements;
   }
-  
+
   public function preSave() {
     parent::preSave();
   }
-  
+
   public static function defaultFieldSettings() {
     return array(
       'path' => '',
@@ -284,6 +274,5 @@ class PartialDateTime extends FieldItemBase {
       'minimum_components' => array(),
     ) + parent::defaultFieldSettings();
   }
-  
-  
+
 }
