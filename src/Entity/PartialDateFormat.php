@@ -42,23 +42,23 @@ class PartialDateFormat extends ConfigEntityBase implements PartialDateFormatInt
   /**
    * @var string
    */
-  public $id;
+  protected $id;
   
   /**
    * @var string
    */
-  public $meridiem = 'a';
+  protected $meridiem = 'a';
   
   /**
    * @var string
    * This controls how year designation is handled: 1BC = 1BCE = -1 and 1AD = 1CE = 1.
    */
-  public $year_designation = 'ce';
+  protected $year_designation = 'ce';
   
   /**
    * @var array
    */
-  public $display = array(
+  protected $display = [
     'year' => 'estimate_label',
     'month' => 'estimate_label',
     'day' => 'estimate_label',
@@ -66,12 +66,12 @@ class PartialDateFormat extends ConfigEntityBase implements PartialDateFormatInt
     'minute' => 'estimate_label',
     'second' => 'none',
     'timezone' => 'none',
-  );
+  ];
   
   /**
    * @var array
    */
-  public $components = array(
+  protected $components = array(
     'year' => array('format' => 'y-ce', 'empty' => '', 'weight' => 0), 
     'month' => array('format' => 'm', 'empty' => '', 'weight' => 1),
     'day' => array('format' => 'j', 'empty' => '', 'weight' => 2),
@@ -89,12 +89,50 @@ class PartialDateFormat extends ConfigEntityBase implements PartialDateFormatInt
    * @var array
    * An array with specific separators.
    */
-  public $separator = array(
+  protected $separator = [
     'date' => '/',
     'time' => ':',
     'datetime' => ' ',
     'range' => ' to ',
     'other' => ' ',
-  );
-  
+  ];
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getMeridiem() {
+    return $this->get('meridiem');
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+   public function getYearDesignation() {
+     return $this->get('year_designation');
+   }
+
+   /**
+    * {@inheritdoc}
+    */
+    public function getDisplay($component) {
+      assert('in_array($component, ["year", "month", "day", "hour", "minute", "second", "timezone"], TRUE)');
+      return $this->get('display')[$component];
+    }
+
+   /**
+    * {@inheritdoc}
+    */
+    public function getFormat($component) {
+      assert('in_array($component, ["year", "month", "day", "hour", "minute", "second", "timezone", "approx", "c1", "c2", "c3"], TRUE)');
+      return $this->get('components')[$component];
+    }
+
+   /**
+    * {@inheritdoc}
+    */
+    public function getSeparator($component) {
+      assert('in_array($component, ["date", "time", "datetime", "range", "other"], TRUE)');
+      return $this->get('separator')[$component];
+    }
+
 }

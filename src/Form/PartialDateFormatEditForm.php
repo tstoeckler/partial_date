@@ -4,7 +4,7 @@ namespace Drupal\partial_date\Form;
 
 use Drupal\Core\Entity\EntityForm;
 use Drupal\Core\Form\FormStateInterface;
-use Drupal\partial_date\Entity\PartialDateFormat;
+use Drupal\partial_date\Entity\PartialDateFormatInterface;
 
 /**
  * Description of FormatTypeEditForm
@@ -12,6 +12,13 @@ use Drupal\partial_date\Entity\PartialDateFormat;
  * @author CosminFr
  */
 class PartialDateFormatEditForm extends EntityForm {
+
+  /**
+   * The partial date format entity.
+   *
+   * @var \Drupal\partial_date\Entity\PartialDateFormatInterface
+   */
+  protected $entity;
 
   /**
    * {@inheritdoc}
@@ -45,12 +52,12 @@ class PartialDateFormatEditForm extends EntityForm {
         'a' => $this->t('Lowercase (am or pm)'),
         'A' => $this->t('Uppercase (AM or PM)')
       ),
-      '#default_value' => $format->meridiem,
+      '#default_value' => $format->getMeridiem(),
     );
     $elements['year_designation'] = array(
       '#type' => 'radios',
       '#title' => $this->t('Year designation format'),
-      '#default_value' => $format->year_designation,
+      '#default_value' => $format->getYearDesignation(),
       '#options' => array(
         'sign' => $this->t('Negative sign (-)', array(), array('context' => 'datetime')),
         'ad' => $this->t('Anno Domini (BC/AD)', array(), array('context' => 'datetime')),
@@ -71,7 +78,7 @@ class PartialDateFormatEditForm extends EntityForm {
     return $elements;
   }
 
-  private function buildDisplayElements($components, PartialDateFormat $format) {
+  private function buildDisplayElements($components, PartialDateFormatInterface $format) {
     $elements = array(
       '#type' => 'details',
       '#title' => $this->t('Component display'),
@@ -89,14 +96,14 @@ class PartialDateFormatEditForm extends EntityForm {
           'date_only' => $this->t('Date component if set', array(), array('context' => 'datetime')),
           'date_or' => $this->t('Date component with fallback to estimate component', array(), array('context' => 'datetime')),
         ),
-        '#default_value' => $format->display[$key],
+        '#default_value' => $format->getDisplay($key),
         '#required' => TRUE,
       );
     }
     return $elements;
   }
   
-  private function buildSeparatorElements(PartialDateFormat $format) {
+  private function buildSeparatorElements(PartialDateFormatInterface $format) {
     $elements = array(
       '#type' => 'details',
       '#title' => $this->t('Component separators'),
@@ -106,7 +113,7 @@ class PartialDateFormatEditForm extends EntityForm {
       '#title' => $this->t('Date separators'),
       '#maxlength' => 15,
       '#size' => 8,
-      '#default_value' => $format->separator['date'],
+      '#default_value' => $format->getSeparator('date'),
       '#description' => $this->t('This separator is used within date part. Empty value is allowed (ex. 20151231). Add spaces if you needed between the separator and the date values.'),
     );
     $elements['time'] = array(
@@ -114,7 +121,7 @@ class PartialDateFormatEditForm extends EntityForm {
       '#title' => $this->t('Time separators'),
       '#maxlength' => 15,
       '#size' => 8,
-      '#default_value' => $format->separator['time'],
+      '#default_value' => $format->getSeparator('time'),
       '#description' => $this->t('This separator is used within time component. Empty value is allowed. Add spaces if needed.'),
     );
     $elements['datetime'] = array(
@@ -122,7 +129,7 @@ class PartialDateFormatEditForm extends EntityForm {
       '#title' => $this->t('Date and time separators'),
       '#size' => 8,
       '#maxlength' => 15,
-      '#default_value' => $format->separator['datetime'],
+      '#default_value' => $format->getSeparator('datetime'),
       '#description' => $this->t('This separator is used between date and time components. '),
       '#attributes' => array('class' => array('field--label-inline')),
     );
@@ -131,7 +138,7 @@ class PartialDateFormatEditForm extends EntityForm {
       '#title' => $this->t('Other separators'),
       '#size' => 8,
       '#maxlength' => 15,
-      '#default_value' => $format->separator['other'],
+      '#default_value' => $format->getSeparator('other'),
       '#description' => $this->t('This separator may be used with year estimations. TODO add better description or deprecate.'),
       '#attributes' => array('class' => array('field--label-inline')),
     );
@@ -140,14 +147,14 @@ class PartialDateFormatEditForm extends EntityForm {
       '#title' => $this->t('Range separator'),
       '#size' => 8,
       '#maxlength' => 15,
-      '#default_value' => $format->separator['range'],
+      '#default_value' => $format->getSeparator('range'),
       '#description' => $this->t('This separator is used to seperate date components in the range element. Add spaces if you need spaces between the separator and the date values.'),
       '#attributes' => array('class' => array('field--label-inline')),
     );
     return $elements;
   }
 
-  private function buildComponentsTable($components, PartialDateFormat $format) {
+  private function buildComponentsTable($components, PartialDateFormatInterface $format) {
     $table = array(
       '#type' => 'table',
       '#header' => array($this->t('Component'), $this->t('Value format'), $this->t('Value empty text'), $this->t('Weight')),
@@ -164,7 +171,7 @@ class PartialDateFormatEditForm extends EntityForm {
 
     // Build the table rows and columns.
     foreach ($components as $key => $label) {
-      $component = $format->components[$key];
+      $component = $format->getFormat($key);
       $table[$key]['#attributes']['class'][] = 'draggable';
       $table[$key]['#weight'] = $component['weight'];
       $table[$key]['label']['#plain_text'] = $label;
