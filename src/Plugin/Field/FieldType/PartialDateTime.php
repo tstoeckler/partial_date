@@ -37,9 +37,6 @@ class PartialDateTime extends FieldItemBase {
     $properties['value'] = DataDefinition::create('float')
       ->setLabel(t('Timestamp'))
       ->setDescription('Contains best approximation for date value');
-    $properties['value_to'] = DataDefinition::create('float')
-      ->setLabel(t('End timestamp'))
-      ->setDescription('Contains the end value of the partial date');
     $properties['txt_short'] = DataDefinition::create('string')
       ->setLabel(t('Short text'));
     $properties['txt_long'] = DataDefinition::create('string')
@@ -49,16 +46,12 @@ class PartialDateTime extends FieldItemBase {
       if ($key == 'timezone') {
         $properties[$key] = DataDefinition::create('string')
           ->setLabel($label);
-      } else {
-        $startDescription = t('The ' . $label . ' for the starting date component.');
-        $endDescription   = t('The ' . $label . ' for the finishing date component.');
+      }
+      else {
         $properties[$key] = DataDefinition::create('integer')
-           ->setLabel($label)
-           ->setDescription($startDescription) ;
-        $properties[$key.'_to'] = DataDefinition::create('integer')
-           ->setLabel($label. t(' end '))
-           ->setDescription($endDescription) ;
-      } 
+          ->setLabel($label)
+          ->setDescription(t('The ' . $label . ' for the starting date component.'));
+      }
     }
     return $properties;
   }
@@ -81,14 +74,6 @@ class PartialDateTime extends FieldItemBase {
           'type' => 'float',
           'size' => 'big',
           'description' => 'The calculated timestamp for a date stored in UTC as a float for unlimited date range support.',
-          'not null' => TRUE,
-          'default' => 0,
-          'sortable' => TRUE,
-        ),
-        'value_to' => array(
-          'type' => 'float',
-          'size' => 'big',
-          'description' => 'The calculated timestamp for end date stored in UTC as a float for unlimited date range support.',
           'not null' => TRUE,
           'default' => 0,
           'sortable' => TRUE,
@@ -118,7 +103,6 @@ class PartialDateTime extends FieldItemBase {
       ),
       'indexes' => array(
         'main' => array('value'),
-        'by_end' => array('value_to'),
       ),
     );
 
@@ -141,9 +125,6 @@ class PartialDateTime extends FieldItemBase {
           'size' => ($key == 'year' ? 'big' : 'small'),
         );
         $schema['columns'][$key] = $column;
-        //Add "*_to" columns
-        $column['description'] = 'The ' . $label . ' for the finishing date component.';
-        $schema['columns'][$key . '_to'] = $column;
       }
     }
     return $schema;
@@ -169,7 +150,6 @@ class PartialDateTime extends FieldItemBase {
   public function isEmpty() {
   //  return !$this->value;
     $val = $this->get('value')->getValue();
-    $val_to = $this->get('value_to')->getValue();
     $txtShort = $this->get('txt_short')->getValue();
     $txtLong = $this->get('txt_long')->getValue();
 //    $item = $this->getEntity();
@@ -195,7 +175,7 @@ class PartialDateTime extends FieldItemBase {
 //
 //    return !((isset($item['txt_short']) && strlen($item['txt_short'])) ||
 //           (isset($item['txt_long']) && strlen($item['txt_long'])));
-    return !(  isset($val) || isset($val_to) ||
+    return !(  isset($val) ||
               (isset($txtShort) && strlen($txtShort)) ||
               (isset($txtLong)  && strlen($txtLong) )
             );
@@ -217,38 +197,19 @@ class PartialDateTime extends FieldItemBase {
       '#collapsed' => TRUE,
       '#tree' => TRUE,
     );
-    $has_range = strpos($field->getType(), '_range');
     foreach (partial_date_components() as $key => $label) {
       $elements['minimum_components']['from_granularity_' . $key] = array(
         '#type' => 'checkbox',
-        '#title' => $has_range ? t('From @date_component', array('@date_component' => $label)) : $label,
+        '#title' => $label,
         '#default_value' => !empty($settings['minimum_components']['from_granularity_' . $key]),
       );
     }
     foreach (partial_date_components(array('timezone')) as $key => $label) {
       $elements['minimum_components']['from_estimates_' . $key] = array(
         '#type' => 'checkbox',
-        '#title' => $has_range
-            ? t('From Estimate @date_component', array('@date_component' => $label))
-            : t('Estimate @date_component', array('@date_component' => $label)),
+        '#title' => t('Estimate @date_component', array('@date_component' => $label)),
         '#default_value' => !empty($settings['minimum_components']['from_estimates_' . $key]),
       );
-    }
-    if ($has_range) {
-      foreach (partial_date_components() as $key => $label) {
-        $elements['minimum_components']['to_granularity_' . $key] = array(
-          '#type' => 'checkbox',
-          '#title' => t('To @date_component', array('@date_component' => $label)),
-          '#default_value' => !empty($settings['minimum_components']['to_granularity_' . $key]),
-        );
-      }
-      foreach (partial_date_components(array('timezone')) as $key => $label) {
-        $elements['minimum_components']['to_estimates_' . $key] = array(
-          '#type' => 'checkbox',
-          '#title' => t('To Estimate @date_component', array('@date_component' => $label)),
-          '#default_value' => !empty($settings['minimum_components']['to_estimates_' . $key]),
-        );
-      }
     }
     $elements['minimum_components']['txt_short'] = array(
       '#type' => 'checkbox',
