@@ -97,7 +97,6 @@ class PartialDateTimeRange extends PartialDateTime {
   public function fieldSettingsForm(array $form, \Drupal\Core\Form\FormStateInterface $form_state) {
     $elements = parent::fieldSettingsForm($form, $form_state);
     $settings = $this->getSettings();
-    $field    = $this->getFieldDefinition();
     foreach (partial_date_components() as $key => $label) {
       $elements['minimum_components']['from_granularity_' . $key]['#title'] = t('From @date_component', array('@date_component' => $label));
     }
@@ -119,6 +118,28 @@ class PartialDateTimeRange extends PartialDateTime {
       );
     }
     return $elements;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function defaultFieldSettings() {
+    $settings = parent::defaultFieldSettings();
+    $settings['minimum_components'] += array(
+      'to_granularity_year' => FALSE,
+      'to_granularity_month' => FALSE,
+      'to_granularity_day' => FALSE,
+      'to_granularity_hour' => FALSE,
+      'to_granularity_minute' => FALSE,
+      'to_granularity_second' => FALSE,
+      'to_granularity_timezone' => FALSE,
+      'to_estimate_year' => FALSE,
+      'to_estimate_month' => FALSE,
+      'to_estimate_day' => FALSE,
+      'to_estimate_hour' => FALSE,
+      'to_estimate_minute' => FALSE,
+      'to_estimate_second' => FALSE,
+    );
   }
 
 }

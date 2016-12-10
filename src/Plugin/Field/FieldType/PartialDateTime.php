@@ -232,7 +232,56 @@ class PartialDateTime extends FieldItemBase {
     return array(
       'path' => '',
       'hide_blank_items' => TRUE,
-      'minimum_components' => array(),
+      'estimates' => array(
+        'year' => array(
+          '-60000|1600' => t('Pre-colonial'),
+          '1500|1599' => t('16th century'),
+          '1600|1699' => t('17th century'),
+          '1700|1799' => t('18th century'),
+          '1800|1899' => t('19th century'),
+          '1900|1999' => t('20th century'),
+          '2000|2099' => t('21st century'),
+        ),
+        'month' => array(
+          '11|1' => t('Winter'),
+          '2|4' => t('Spring'),
+          '5|7' => t('Summer'),
+          '8|10' => t('Autumn'),
+        ),
+        'day' => array(
+          '0|12' => t('The start of the month'),
+          '10|20' => t('The middle of the month'),
+          '18|31' => t('The end of the month'),
+        ),
+        'hour' => array(
+          '6|18' => t('Day time'),
+          '6|12' => t('Morning'),
+          '12|13' => t('Noon'),
+          '12|18' => t('Afternoon'),
+          '18|22' => t('Evening'),
+          '0|1' => t('Midnight'),
+          '18|6' => t('Night'),
+        ),
+        'minute' => array(),
+        'second' => array(),
+      ),
+      'minimum_components' => array(
+        'from_granularity_year' => FALSE,
+        'from_granularity_month' => FALSE,
+        'from_granularity_day' => FALSE,
+        'from_granularity_hour' => FALSE,
+        'from_granularity_minute' => FALSE,
+        'from_granularity_second' => FALSE,
+        'from_granularity_timezone' => FALSE,
+        'from_estimate_year' => FALSE,
+        'from_estimate_month' => FALSE,
+        'from_estimate_day' => FALSE,
+        'from_estimate_hour' => FALSE,
+        'from_estimate_minute' => FALSE,
+        'from_estimate_second' => FALSE,
+        'txt_short' => FALSE,
+        'txt_long' => FALSE,
+      ),
     ) + parent::defaultFieldSettings();
   }
 

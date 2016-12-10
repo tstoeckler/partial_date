@@ -11,40 +11,6 @@ partial_date.settings:
     langcode:
       type: string
       label: 'Language code'
-    estimates:
-      type: mapping
-      label: 'Estimates'
-      mapping:
-        year:
-          type: sequence
-          label: 'Year estimates'
-          sequence:
-            type: string
-        month:
-          type: sequence
-          label: 'Month estimates'
-          sequence:
-            type: string
-        day:
-          type: sequence
-          label: 'Day estimates'
-          sequence:
-            type: string
-        hour:
-          type: sequence
-          label: 'Hour estimates'
-          sequence:
-            type: string
-        minute:
-          type: sequence
-          label: 'Minute estimates'
-          sequence:
-            type: string
-        second:
-          type: sequence
-          label: 'Second estimates'
-          sequence:
-            type: string
 
 partial_date.format.*:
   type: config_entity
@@ -199,3 +165,113 @@ partial_date.format.component_format:
     empty:
       type: string
       label: 'empty'
+
+field.field_settings.partial_date_time:
+  type: mapping
+  label: 'Partial date time field settings'
+  mapping:
+    path:
+      type: string
+    hide_blank_items:
+      type: boolean
+    estimates:
+      type: mapping
+      label: 'Estimates'
+      mapping:
+        year:
+          type: sequence
+          label: 'Year estimates'
+          sequence:
+            type: string
+        month:
+          type: sequence
+          label: 'Month estimates'
+          sequence:
+            type: string
+        day:
+          type: sequence
+          label: 'Day estimates'
+          sequence:
+            type: string
+        hour:
+          type: sequence
+          label: 'Hour estimates'
+          sequence:
+            type: string
+        minute:
+          type: sequence
+          label: 'Minute estimates'
+          sequence:
+            type: string
+        second:
+          type: sequence
+          label: 'Second estimates'
+          sequence:
+            type: string
+    minimum_components:
+      type: mapping
+      mapping:
+        from_granularity_year:
+          type: boolean
+        from_granularity_month:
+          type: boolean
+        from_granularity_day:
+          type: boolean
+        from_granularity_hour:
+          type: boolean
+        from_granularity_minute:
+          type: boolean
+        from_granularity_second:
+          type: boolean
+        from_granularity_timezone:
+          type: boolean
+        from_estimate_year:
+          type: boolean
+        from_estimate_month:
+          type: boolean
+        from_estimate_day:
+          type: boolean
+        from_estimate_hour:
+          type: boolean
+        from_estimate_minute:
+          type: boolean
+        from_estimate_second:
+          type: boolean
+        txt_short:
+          type: boolean
+        txt_long:
+          type: boolean
+
+field.field_settings.partial_date_time_range:
+  type: mapping
+  label: 'Partial date time range field settings'
+  mapping:
+    minimum_components:
+      type: mapping
+      mapping:
+        to_granularity_year:
+          type: boolean
+        to_granularity_month:
+          type: boolean
+        to_granularity_day:
+          type: boolean
+        to_granularity_hour:
+          type: boolean
+        to_granularity_minute:
+          type: boolean
+        to_granularity_second:
+          type: boolean
+        to_granularity_timezone:
+          type: boolean
+        to_estimate_year:
+          type: boolean
+        to_estimate_month:
+          type: boolean
+        to_estimate_day:
+          type: boolean
+        to_estimate_hour:
+          type: boolean
+        to_estimate_minute:
+          type: boolean
+        to_estimate_second:
+          type: boolean
