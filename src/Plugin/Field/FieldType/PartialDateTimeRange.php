@@ -4,6 +4,7 @@ namespace Drupal\partial_date\Plugin\Field\FieldType;
 
 use Drupal\Core\Field\FieldStorageDefinitionInterface;
 use Drupal\Core\TypedData\DataDefinition;
+use Drupal\Core\TypedData\MapDataDefinition;
 
 /**
  * Plugin implementation of the 'partial_date' field type.
@@ -24,7 +25,7 @@ class PartialDateTimeRange extends PartialDateTime {
    */
   public static function propertyDefinitions(FieldStorageDefinitionInterface $field_definition) {
     $properties = parent::propertyDefinitions($field_definition);
-    $properties['value_to'] = DataDefinition::create('float')
+    $properties['timestamp_to'] = DataDefinition::create('float')
       ->setLabel(t('End timestamp'))
       ->setDescription('Contains the end value of the partial date');
 
@@ -37,6 +38,10 @@ class PartialDateTimeRange extends PartialDateTime {
         ->setLabel($label. t(' end '))
         ->setDescription(t('The ' . $label . ' for the finishing date component.'));
     }
+
+    $properties['to'] = MapDataDefinition::create()
+      ->setLabel(t('To'))
+      ->setComputed(TRUE);
     return $properties;
   }
 
@@ -53,7 +58,7 @@ class PartialDateTimeRange extends PartialDateTime {
    */
   public static function schema(FieldStorageDefinitionInterface $field) {
     $schema = parent::schema($field);
-    $schema['columns']['value_to'] = [
+    $schema['columns']['timestamp_to'] = [
       'type' => 'float',
       'size' => 'big',
       'description' => 'The calculated timestamp for end date stored in UTC as a float for unlimited date range support.',
@@ -61,7 +66,7 @@ class PartialDateTimeRange extends PartialDateTime {
       'default' => 0,
       'sortable' => TRUE,
     ];
-    $schema['indexes']['by_end'] = ['value_to'];
+    $schema['indexes']['timestamp_to'] = ['timestamp_to'];
 
     foreach (partial_date_components() as $key => $label) {
       if ($key == 'timezone') {
@@ -80,7 +85,7 @@ class PartialDateTimeRange extends PartialDateTime {
    * {@inheritdoc}
    */
   public function isEmpty() {
-    $val_to = $this->get('value_to')->getValue();
+    $val_to = $this->get('timestamp_to')->getValue();
     return parent::isEmpty() && !isset($val_to);
   }
 
@@ -134,6 +139,7 @@ class PartialDateTimeRange extends PartialDateTime {
       'to_estimate_minute' => FALSE,
       'to_estimate_second' => FALSE,
     );
+    return $settings;
   }
 
 }

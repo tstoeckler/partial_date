@@ -4,7 +4,9 @@ namespace Drupal\partial_date\Plugin\Field\FieldType;
 
 use Drupal\Core\Field\FieldItemBase;
 use Drupal\Core\Field\FieldStorageDefinitionInterface;
+use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\TypedData\DataDefinition;
+use Drupal\Core\TypedData\MapDataDefinition;
 
 /**
  * Plugin implementation of the 'partial_date' field type.
@@ -34,7 +36,7 @@ class PartialDateTime extends FieldItemBase {
    * {@inheritdoc}
    */
   public static function propertyDefinitions(FieldStorageDefinitionInterface $field_definition) {
-    $properties['value'] = DataDefinition::create('float')
+    $properties['timestamp'] = DataDefinition::create('float')
       ->setLabel(t('Timestamp'))
       ->setDescription('Contains best approximation for date value');
     $properties['txt_short'] = DataDefinition::create('string')
@@ -53,6 +55,18 @@ class PartialDateTime extends FieldItemBase {
           ->setDescription(t('The ' . $label . ' for the starting date component.'));
       }
     }
+
+    /** @see \Drupal\partial_date\Plugin\Field\FieldType\PartialDateTime::setValue() */
+    $properties['check_approximate'] = DataDefinition::create('boolean')
+      ->setLabel(t('Check approximate'))
+      ->setComputed(TRUE);
+
+    $properties['from'] = MapDataDefinition::create()
+      ->setLabel(t('From'))
+      ->setComputed(TRUE);
+
+    $properties['data'] = MapDataDefinition::create()
+      ->setLabel(t('Data'));
     return $properties;
   }
 
@@ -70,13 +84,12 @@ class PartialDateTime extends FieldItemBase {
   public static function schema(FieldStorageDefinitionInterface $field) {
     $schema = array(
       'columns' => array(
-        'value' => array(
+        'timestamp' => array(
           'type' => 'float',
           'size' => 'big',
           'description' => 'The calculated timestamp for a date stored in UTC as a float for unlimited date range support.',
           'not null' => TRUE,
           'default' => 0,
-          'sortable' => TRUE,
         ),
         // These are instance settings, so add to the schema for every field.
         'txt_short' => array(
@@ -84,25 +97,23 @@ class PartialDateTime extends FieldItemBase {
           'length' => 100,
           'description' => 'A editable display field for this date for the short format.',
           'not null' => FALSE,
-          'sortable' => TRUE,
         ),
         'txt_long' => array(
           'type' => 'varchar',
           'length' => 255,
           'description' => 'A editable display field for this date for the long format.',
           'not null' => FALSE,
-          'sortable' => TRUE,
         ),
-//        'data' => array(
-//          'description' => 'The configuration data for the effect.',
-//          'type' => 'blob',
-//          'not null' => FALSE,
-//          'size' => 'big',
-//          'sortable' => FALSE,
-//        ),
+        'data' => array(
+          'description' => 'The configuration data for the effect.',
+          'type' => 'blob',
+          'not null' => FALSE,
+          'size' => 'big',
+          'serialize' => TRUE,
+        ),
       ),
       'indexes' => array(
-        'main' => array('value'),
+        'timestamp' => array('timestamp'),
       ),
     );
 
@@ -131,7 +142,6 @@ class PartialDateTime extends FieldItemBase {
   }
 
   protected function deleteConfig($configName) {
-    //$config = \Drupal::service('config.factory')->getEditable($configName);
     $config = \Drupal::configFactory()->getEditable($configName);
     if (isset($config)) {
       $config->delete();
@@ -149,7 +159,7 @@ class PartialDateTime extends FieldItemBase {
    */
   public function isEmpty() {
   //  return !$this->value;
-    $val = $this->get('value')->getValue();
+    $val = $this->get('timestamp')->getValue();
     $txtShort = $this->get('txt_short')->getValue();
     $txtLong = $this->get('txt_long')->getValue();
 //    $item = $this->getEntity();
@@ -184,40 +194,61 @@ class PartialDateTime extends FieldItemBase {
   /**
    * {@inheritdoc}
    */
-  public function fieldSettingsForm(array $form, \Drupal\Core\Form\FormStateInterface $form_state) {
+  public function fieldSettingsForm(array $form, FormStateInterface $form_state) {
     $settings = $this->getSettings();
-    $elements = array();
+    $elements['estimates'] = array(
+      '#type' => 'details',
+      '#title' => t('Base estimate values'),
+      '#description' => t('These fields provide options for additional fields that can be used to represent corresponding date / time components. They define time periods where an event occured when exact details are unknown. All of these fields have the format "start|end|label", one per line, where start marks when this period started, end marks the end of the period and the label is shown to the user. Instance settings will be used whenever possible on forms, but views integration (once completed) will use the field values. Note that if used, the formatters will replace any corresponding date / time component with the options label value.'),
+      '#open' => FALSE,
+    );
+    foreach (partial_date_components() as $key => $label) {
+      if ($key == 'timezone') {
+        continue;
+      }
+      $value = array();
+      foreach($settings['estimates'][$key] as $range => $option_label) {
+        $value[] = $range . '|' . $option_label;
+      }
+      $elements['estimates'][$key] = array(
+        '#type' => 'textarea',
+        '#title' => t('%label range options', array('%label' => $label), array('context' => 'datetime settings')),
+        '#default_value' => implode("\n", $value),
+        '#description' => t('Provide relative approximations for this date / time component.'),
+        '#element_validate' => array('partial_date_field_estimates_validate_parse_options'),
+        '#date_component' => $key,
+      );
+    }
+
     $elements['minimum_components'] = array(
-      '#type' => 'fieldset',
+      '#type' => 'details',
       '#title' => t('Minimum components'),
       '#description' => t('These are used to determine if the field is incomplete during validation. All possible fields are listed here, but these are only checked if enabled in the instance settings.'),
-      '#collapsible' => TRUE,
-      '#collapsed' => TRUE,
-      '#tree' => TRUE,
+      '#open' => FALSE,
     );
     foreach (partial_date_components() as $key => $label) {
       $elements['minimum_components']['from_granularity_' . $key] = array(
         '#type' => 'checkbox',
         '#title' => $label,
-        '#default_value' => !empty($settings['minimum_components']['from_granularity_' . $key]),
+        '#default_value' => $settings['minimum_components']['from_granularity_' . $key],
       );
     }
     foreach (partial_date_components(array('timezone')) as $key => $label) {
       $elements['minimum_components']['from_estimates_' . $key] = array(
         '#type' => 'checkbox',
         '#title' => t('Estimate @date_component', array('@date_component' => $label)),
-        '#default_value' => !empty($settings['minimum_components']['from_estimates_' . $key]),
+        '#default_value' => $settings['minimum_components']['from_estimates_' . $key],
       );
     }
     $elements['minimum_components']['txt_short'] = array(
       '#type' => 'checkbox',
       '#title' => t('Short date text'),
-      '#default_value' => !empty($settings['minimum_components']['txt_short']),
+      '#default_value' => $settings['minimum_components']['txt_short'],
     );
     $elements['minimum_components']['txt_long'] = array(
       '#type' => 'checkbox',
       '#title' => t('Long date text'),
-      '#default_value' => !empty($settings['minimum_components']['txt_long']),
+      '#default_value' => $settings['minimum_components']['txt_long'],
     );
     return $elements;
   }
@@ -280,6 +311,36 @@ class PartialDateTime extends FieldItemBase {
         'txt_long' => FALSE,
       ),
     ) + parent::defaultFieldSettings();
+  }
+
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setValue($values, $notify = TRUE) {
+    // Treat the values as property value of the main property, if no array is
+    // given.
+    if (isset($values) && !is_array($values)) {
+      $values = [static::mainPropertyName() => $values];
+    }
+    if (isset($values)) {
+      $values += [
+        'data' => [],
+      ];
+    }
+    // Unserialize the data property.
+    // @todo The storage controller should take care of this, see
+    //   https://www.drupal.org/node/2414835
+    if (is_string($values['data'])) {
+      $values['data'] = unserialize($values['data']);
+    }
+    // Instead of using a separate class for the 'check_approximate' computed
+    // property, we just set it here, as we have the value of the 'data'
+    // property available anyway.
+    if (isset($values['data']['check_approximate'])) {
+      $this->writePropertyValue('check_approximate', $values['data']['check_approximate']);
+    }
+    parent::setValue($values, $notify);
   }
 
 }
