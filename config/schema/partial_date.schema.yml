@@ -205,6 +205,11 @@ field.field_settings.partial_date_time:
           label: 'Second estimates'
           sequence:
             type: string
+
+field.storage_settings.partial_date_time:
+  type: mapping
+  label: 'Partial date time storage settings'
+  mapping:
     minimum_components:
       type: mapping
       mapping:
@@ -239,9 +244,9 @@ field.field_settings.partial_date_time:
         txt_long:
           type: boolean
 
-field.field_settings.partial_date_time_range:
-  type: mapping
-  label: 'Partial date time range field settings'
+field.storage_settings.partial_date_time_range:
+  type: field.storage_settings.partial_date_time
+  label: 'Partial date time range storage settings'
   mapping:
     minimum_components:
       type: mapping

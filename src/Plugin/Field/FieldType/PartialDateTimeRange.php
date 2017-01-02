@@ -3,6 +3,7 @@
 namespace Drupal\partial_date\Plugin\Field\FieldType;
 
 use Drupal\Core\Field\FieldStorageDefinitionInterface;
+use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\TypedData\DataDefinition;
 use Drupal\Core\TypedData\MapDataDefinition;
 use Drupal\partial_date\Plugin\DataType\PartialDateTimeComputed;
@@ -26,9 +27,13 @@ class PartialDateTimeRange extends PartialDateTime {
    */
   public static function propertyDefinitions(FieldStorageDefinitionInterface $field_definition) {
     $properties = parent::propertyDefinitions($field_definition);
+
+    $minimum_components = $field_definition->getSetting('minimum_components');
+
     $properties['timestamp_to'] = DataDefinition::create('float')
       ->setLabel(t('End timestamp'))
-      ->setDescription('Contains the end value of the partial date');
+      ->setDescription('Contains the end value of the partial date')
+      ->setRequired(TRUE);
 
     foreach (partial_date_components() as $key => $label) {
       if ($key == 'timezone') {
@@ -37,7 +42,8 @@ class PartialDateTimeRange extends PartialDateTime {
 
       $properties[$key.'_to'] = DataDefinition::create('integer')
         ->setLabel($label. t(' end '))
-        ->setDescription(t('The ' . $label . ' for the finishing date component.'));
+        ->setDescription(t('The ' . $label . ' for the finishing date component.'))
+        ->setRequired($minimum_components['to_granularity_' . $key]);
     }
 
     $properties['to'] = MapDataDefinition::create()
@@ -61,6 +67,9 @@ class PartialDateTimeRange extends PartialDateTime {
    */
   public static function schema(FieldStorageDefinitionInterface $field) {
     $schema = parent::schema($field);
+
+    $minimum_components = $field->getSetting('minimum_components');
+
     $schema['columns']['timestamp_to'] = [
       'type' => 'float',
       'size' => 'big',
@@ -79,6 +88,7 @@ class PartialDateTimeRange extends PartialDateTime {
       $column = $schema['columns'][$key];
       //Add "*_to" columns
       $column['description'] = 'The ' . $label . ' for the finishing date component.';
+      $column['not null'] = $minimum_components['to_granularity_' . $key];
       $schema['columns'][$key . '_to'] = $column;
     }
     return $schema;
@@ -93,10 +103,9 @@ class PartialDateTimeRange extends PartialDateTime {
   }
 
   /**
-   * Helper function to duplicate the same settings on both the instance and field
-   * settings.
+   * {@inheritdoc}
    */
-  public function fieldSettingsForm(array $form, \Drupal\Core\Form\FormStateInterface $form_state) {
+  public function storageSettingsForm(array &$form, FormStateInterface $form_state, $has_data) {
     $elements = parent::fieldSettingsForm($form, $form_state);
     $settings = $this->getSettings();
     foreach (partial_date_components() as $key => $label) {
@@ -125,8 +134,8 @@ class PartialDateTimeRange extends PartialDateTime {
   /**
    * {@inheritdoc}
    */
-  public static function defaultFieldSettings() {
-    $settings = parent::defaultFieldSettings();
+  public static function defaultStorageSettings() {
+    $settings = parent::defaultStorageSettings();
     $settings['minimum_components'] += array(
       'to_granularity_year' => FALSE,
       'to_granularity_month' => FALSE,

@@ -37,13 +37,17 @@ class PartialDateTime extends FieldItemBase {
    * {@inheritdoc}
    */
   public static function propertyDefinitions(FieldStorageDefinitionInterface $field_definition) {
+    $minimum_components = $field_definition->getSetting('minimum_components');
     $properties['timestamp'] = DataDefinition::create('float')
       ->setLabel(t('Timestamp'))
-      ->setDescription('Contains best approximation for date value');
+      ->setDescription('Contains best approximation for date value')
+      ->setRequired(TRUE);
     $properties['txt_short'] = DataDefinition::create('string')
-      ->setLabel(t('Short text'));
+      ->setLabel(t('Short text'))
+      ->setRequired($minimum_components['txt_short']);
     $properties['txt_long'] = DataDefinition::create('string')
-      ->setLabel(t('Long text'));
+      ->setLabel(t('Long text'))
+      ->setRequired($minimum_components['txt_long']);
     //Components: 'year', 'month', 'day', 'hour', 'minute', 'second', 'timezone'
     foreach (partial_date_components() as $key => $label) {
       if ($key == 'timezone') {
@@ -55,6 +59,8 @@ class PartialDateTime extends FieldItemBase {
           ->setLabel($label)
           ->setDescription(t('The ' . $label . ' for the starting date component.'));
       }
+      /** @var \Drupal\Core\TypedData\DataDefinition $properties[$key] */
+      $properties[$key]->setRequired($minimum_components['from_granularity_' . $key]);
     }
 
     /** @see \Drupal\partial_date\Plugin\Field\FieldType\PartialDateTime::setValue() */
@@ -85,6 +91,8 @@ class PartialDateTime extends FieldItemBase {
    * in a singular field.
    */
   public static function schema(FieldStorageDefinitionInterface $field) {
+    $minimum_components = $field->getSetting('minimum_components');
+
     $schema = array(
       'columns' => array(
         'timestamp' => array(
@@ -121,25 +129,25 @@ class PartialDateTime extends FieldItemBase {
     );
 
     foreach (partial_date_components() as $key => $label) {
-      if ($key == 'timezone') {
-        $schema['columns'][$key] = array(
+      if ($key === 'timezone') {
+        $column = array(
           'type' => 'varchar',
           'length' => 50,
           'description' => 'The ' . $label . ' for the time component.',
-          'not null' => FALSE,
-          'default' => NULL,
         );
       }
       else {
         $column = array(
           'type' => 'int',
           'description' => 'The ' . $label . ' for the starting date component.',
-          'not null' => FALSE,
-          'default' => NULL,
-          'size' => ($key == 'year' ? 'big' : 'small'),
+          'size' => ($key === 'year') ? 'big' : 'small',
         );
-        $schema['columns'][$key] = $column;
       }
+      $column += array(
+        'not null' => $minimum_components['from_granularity_' . $key],
+        'default' => NULL,
+      );
+      $schema['columns'][$key] = $column;
     }
     return $schema;
   }
@@ -177,7 +185,7 @@ class PartialDateTime extends FieldItemBase {
    * {@inheritdoc}
    */
   public function isEmpty() {
-  //  return !$this->value;
+    //  return !$this->value;
     $val = $this->get('timestamp')->getValue();
     $txtShort = $this->get('txt_short')->getValue();
     $txtLong = $this->get('txt_long')->getValue();
@@ -204,41 +212,17 @@ class PartialDateTime extends FieldItemBase {
 //
 //    return !((isset($item['txt_short']) && strlen($item['txt_short'])) ||
 //           (isset($item['txt_long']) && strlen($item['txt_long'])));
-    return !(  isset($val) ||
-              (isset($txtShort) && strlen($txtShort)) ||
-              (isset($txtLong)  && strlen($txtLong) )
-            );
+    return !(isset($val) ||
+      (isset($txtShort) && strlen($txtShort)) ||
+      (isset($txtLong) && strlen($txtLong))
+    );
   }
 
   /**
    * {@inheritdoc}
    */
-  public function fieldSettingsForm(array $form, FormStateInterface $form_state) {
+  public function storageSettingsForm(array &$form, FormStateInterface $form_state, $has_data) {
     $settings = $this->getSettings();
-    $elements['estimates'] = array(
-      '#type' => 'details',
-      '#title' => t('Base estimate values'),
-      '#description' => t('These fields provide options for additional fields that can be used to represent corresponding date / time components. They define time periods where an event occured when exact details are unknown. All of these fields have the format "start|end|label", one per line, where start marks when this period started, end marks the end of the period and the label is shown to the user. Instance settings will be used whenever possible on forms, but views integration (once completed) will use the field values. Note that if used, the formatters will replace any corresponding date / time component with the options label value.'),
-      '#open' => FALSE,
-    );
-    foreach (partial_date_components() as $key => $label) {
-      if ($key == 'timezone') {
-        continue;
-      }
-      $value = array();
-      foreach($settings['estimates'][$key] as $range => $option_label) {
-        $value[] = $range . '|' . $option_label;
-      }
-      $elements['estimates'][$key] = array(
-        '#type' => 'textarea',
-        '#title' => t('%label range options', array('%label' => $label), array('context' => 'datetime settings')),
-        '#default_value' => implode("\n", $value),
-        '#description' => t('Provide relative approximations for this date / time component.'),
-        '#element_validate' => array('partial_date_field_estimates_validate_parse_options'),
-        '#date_component' => $key,
-      );
-    }
-
     $elements['minimum_components'] = array(
       '#type' => 'details',
       '#title' => t('Minimum components'),
@@ -272,11 +256,115 @@ class PartialDateTime extends FieldItemBase {
     return $elements;
   }
 
+
+  /**
+   * {@inheritdoc}
+   */
+  public function fieldSettingsForm(array $form, FormStateInterface $form_state) {
+    $settings = $this->getSettings();
+    $elements['estimates'] = array(
+      '#type' => 'details',
+      '#title' => t('Base estimate values'),
+      '#description' => t('These fields provide options for additional fields that can be used to represent corresponding date / time components. They define time periods where an event occured when exact details are unknown. All of these fields have the format "start|end|label", one per line, where start marks when this period started, end marks the end of the period and the label is shown to the user. Instance settings will be used whenever possible on forms, but views integration (once completed) will use the field values. Note that if used, the formatters will replace any corresponding date / time component with the options label value.'),
+      '#open' => FALSE,
+    );
+    foreach (partial_date_components() as $key => $label) {
+      if ($key == 'timezone') {
+        continue;
+      }
+      $value = array();
+      foreach ($settings['estimates'][$key] as $range => $option_label) {
+        $value[] = $range . '|' . $option_label;
+      }
+      $elements['estimates'][$key] = array(
+        '#type' => 'textarea',
+        '#title' => t('%label range options', array('%label' => $label), array('context' => 'datetime settings')),
+        '#default_value' => implode("\n", $value),
+        '#description' => t('Provide relative approximations for this date / time component.'),
+        '#element_validate' => array('partial_date_field_estimates_validate_parse_options'),
+        '#date_component' => $key,
+      );
+    }
+
+    return $elements;
+  }
+
+  /**
+   * Form element validation handler for estimate options.
+   */
+  public static function validateEstimateOptions(&$element, FormStateInterface &$form_state, &$complete_form) {
+    $items = array();
+    foreach (explode("\n", $element['#value']) as $line) {
+      $line = trim($line);
+      if (!empty($line)) {
+        list($from, $to, $label) = explode('|', $line . '||');
+        if (!strlen($from) && !strlen($to)) {
+          continue;
+        }
+        $label = trim($label);
+        if (empty($label)) {
+          $form_state->setError($element, t('The label for the keys %keys is required.', array('%keys' => $from . '|' . $to)));
+        }
+        elseif (!is_numeric($from) || !is_numeric($to)) {
+          $form_state->setError($element, t('The keys %from and %to must both be numeric.', array('%from' => $from, '%to' => $to)));
+        }
+        else {
+          // We need to preserve empty strings, so cast to temp variables.
+          $_from = (int) $from;
+          $_to = (int) $to;
+          $limits = array(
+            'month' => 12,
+            'day' => 31,
+            'hour' => 23,
+            'minute' => 59,
+            'second' => 59,
+          );
+          if (isset($limits[$element['#date_component']])) {
+            $limit = $limits[$element['#date_component']];
+            if ($_to > $limit || $_to < 0 || $_from > $limit || $_from < 0) {
+              $form_state->setError($element, t('The keys %from and %to must be within the range 0 to !max.', array('%from' => $_from, '%to' => $_to, '!max' => $limit)));
+              continue;
+            }
+          }
+          $items[$from . '|' . $to] = $label;
+        }
+      }
+    }
+
+    $form_state->setValueForElement($element, $items);
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function defaultStorageSettings() {
+    $settings = array(
+      'minimum_components' => array(
+        'from_granularity_year' => FALSE,
+        'from_granularity_month' => FALSE,
+        'from_granularity_day' => FALSE,
+        'from_granularity_hour' => FALSE,
+        'from_granularity_minute' => FALSE,
+        'from_granularity_second' => FALSE,
+        'from_granularity_timezone' => FALSE,
+        'from_estimate_year' => FALSE,
+        'from_estimate_month' => FALSE,
+        'from_estimate_day' => FALSE,
+        'from_estimate_hour' => FALSE,
+        'from_estimate_minute' => FALSE,
+        'from_estimate_second' => FALSE,
+        'txt_short' => FALSE,
+        'txt_long' => FALSE,
+      ),
+    );
+    return $settings + parent::defaultStorageSettings();
+  }
+
   /**
    * {@inheritdoc}
    */
   public static function defaultFieldSettings() {
-    return array(
+    $settings = array(
       'path' => '',
       'hide_blank_items' => TRUE,
       'estimates' => array(
@@ -312,24 +400,8 @@ class PartialDateTime extends FieldItemBase {
         'minute' => array(),
         'second' => array(),
       ),
-      'minimum_components' => array(
-        'from_granularity_year' => FALSE,
-        'from_granularity_month' => FALSE,
-        'from_granularity_day' => FALSE,
-        'from_granularity_hour' => FALSE,
-        'from_granularity_minute' => FALSE,
-        'from_granularity_second' => FALSE,
-        'from_granularity_timezone' => FALSE,
-        'from_estimate_year' => FALSE,
-        'from_estimate_month' => FALSE,
-        'from_estimate_day' => FALSE,
-        'from_estimate_hour' => FALSE,
-        'from_estimate_minute' => FALSE,
-        'from_estimate_second' => FALSE,
-        'txt_short' => FALSE,
-        'txt_long' => FALSE,
-      ),
-    ) + parent::defaultFieldSettings();
+    );
+    return $settings + parent::defaultFieldSettings();
   }
 
 

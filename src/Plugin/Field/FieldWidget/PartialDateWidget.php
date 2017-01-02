@@ -35,9 +35,10 @@ class PartialDateWidget extends WidgetBase {
     $help_txt = $this->_partial_date_widget_help_text($current_langcode);
 
     $settings = $this->getSettings();
-    $field    = $items[$delta];
-    $fieldDef = $field->getFieldDefinition();
-    $type     = $fieldDef->getType();
+    /** @var \Drupal\Core\Field\FieldItemInterface $item */
+    $item    = $items[$delta];
+    $field_definition = $item->getFieldDefinition();
+    $type     = $field_definition->getType();
     $hasRange = strpos($type, 'range');
 
     $inline_range_style = FALSE;
@@ -45,15 +46,16 @@ class PartialDateWidget extends WidgetBase {
       $inline_range_style = ' style="' . _partial_date_inline_float_css(FALSE) . '"';
     }
     // Fix the title on multi-value fields.
+
     if (empty($element['#title'])) {
       $element['#title_display'] = 'invisible';
     }
-    elseif ($fieldDef->getFieldStorageDefinition()->getCardinality() == 1) {
+    elseif ($field_definition->getFieldStorageDefinition()->getCardinality() == 1) {
       $element['#type'] = 'item';
     }
     $element['#tree'] = TRUE;
 
-    $value = $field->getValue();
+    $value = $item->getValue();
 
     // General styles to nicely format the element inline without having to load
     // external style sheets.
@@ -72,7 +74,7 @@ class PartialDateWidget extends WidgetBase {
       }
     }
 
-    $estimate_options = $config->get('estimates');
+    $estimate_options = $field_definition->getSetting('estimates');
     $increments = empty($settings['increments']) ? array() : $settings['increments'];
     $element['from'] = array(
       '#type' => 'partial_datetime_element',
@@ -138,7 +140,7 @@ class PartialDateWidget extends WidgetBase {
       $parents = $element['#parents'];
     }
     // field_partial_dates[und][0][check_approximate]
-    $parents[] = $field->getName();// ['field_name'];
+    $parents[] = $item->getName();// ['field_name'];
     $parents[] = $current_langcode;
 
     foreach (array('txt_short', 'txt_long') as $key) {
@@ -153,7 +155,7 @@ class PartialDateWidget extends WidgetBase {
           '#title' => $description,
           '#description' => $description,
           '#title_display' => 'invisible',
-          '#default_value' => $field->get($key)->getValue() ?: $key,   //empty($value[$key]) ? '' : $value[$key],
+          '#default_value' => $item->get($key)->getValue() ?: $key,   //empty($value[$key]) ? '' : $value[$key],
           '#prefix' => '<div class="partial-date-' . $key . '"' . ($css_txt ? ' style="' . $css_txt . '"' : '') . '>',
           '#suffix' => '</div>',
           '#maxlength' => 255,
