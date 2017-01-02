@@ -31,18 +31,6 @@
 //  );
 //}
 
-/**
- * Wrapper to set the storage column.
- */
-function partial_date_field_presave_generate_storage_date($item, $end_date = FALSE) {
-  $components = array();
-  foreach (partial_date_components() as $key => $label) {
-    $empty = $key == 'timezone' ? '' : NULL;
-    $components[$key . ($end_date ? '_to' : '')] = isset($item[$key]) && strlen($item[$key]) ? $item[$key] : $empty;
-  }
-  return $components;
-}
-
 function _partial_date_inline_float_css($component = TRUE) {
   $language = \Drupal::languageManager()->getCurrentLanguage();
   // Language will be \Drupal\Core\Language\Language::\Drupal\Core\Language\Language::\Drupal\Core\Language\Language::\Drupal\Core\Language\Language::\Drupal\Core\Language\Language::LANGUAGE_LTR (0) or \Drupal\Core\Language\Language::\Drupal\Core\Language\Language::\Drupal\Core\Language\Language::\Drupal\Core\Language\Language::\Drupal\Core\Language\Language::LANGUAGE_RTL (1).

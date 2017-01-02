@@ -217,9 +217,6 @@
  */
 function partial_date_theme() {
   return array(
-    'partial_date_element' => array(
-      'render element' => 'element',
-    ),
     'partial_date_range_inline_element' => array(
       'render element' => 'element',
       'file' => 'partial_date.theme.inc',
@@ -230,25 +227,11 @@ function partial_date_theme() {
     'partial_date_range' => array(
       'variables' => array('from' => NULL, 'to' => NULL, 'settings' => array()),
     ),
-    'partial_date_format_settings_form' => array(
-      'render element' => 'form',
-      'file' => 'partial_date.pages.inc',
-    ),
     'partial_date_inline_form_element' => array(
       'render element' => 'element',
       'file' => 'partial_date.theme.inc',
     ),
   );
-}
-
-
-/**
- * The theme wrapper for a single date component.
- * todo: floating support.
- */
-function theme_partial_date_element($variables) {
-  $element = $variables['element'];
-  return '<div class="partial-date-element clearfix">' . drupal_render_children($element) . '</div>';
 }
 
 function theme_partial_date_range($variables) {
