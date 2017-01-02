@@ -40,8 +40,7 @@ class PartialDateTime extends FieldItemBase {
     $minimum_components = $field_definition->getSetting('minimum_components');
     $properties['timestamp'] = DataDefinition::create('float')
       ->setLabel(t('Timestamp'))
-      ->setDescription('Contains best approximation for date value')
-      ->setRequired(TRUE);
+      ->setDescription('Contains best approximation for date value');
     $properties['txt_short'] = DataDefinition::create('string')
       ->setLabel(t('Short text'))
       ->setRequired($minimum_components['txt_short']);
@@ -59,8 +58,6 @@ class PartialDateTime extends FieldItemBase {
           ->setLabel($label)
           ->setDescription(t('The ' . $label . ' for the starting date component.'));
       }
-      /** @var \Drupal\Core\TypedData\DataDefinition $properties[$key] */
-      $properties[$key]->setRequired($minimum_components['from_granularity_' . $key]);
     }
 
     /** @see \Drupal\partial_date\Plugin\Field\FieldType\PartialDateTime::setValue() */
@@ -150,6 +147,18 @@ class PartialDateTime extends FieldItemBase {
       $schema['columns'][$key] = $column;
     }
     return $schema;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getConstraints() {
+    $constraint_manager = $this->getTypedDataManager()->getValidationConstraintManager();
+    $constraints = parent::getConstraints();
+
+    $constraints[] = $constraint_manager->create('PartialDate', []);
+
+    return $constraints;
   }
 
   /**

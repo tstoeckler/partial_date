@@ -97,6 +97,18 @@ class PartialDateTimeRange extends PartialDateTime {
   /**
    * {@inheritdoc}
    */
+  public function getConstraints() {
+    $constraint_manager = $this->getTypedDataManager()->getValidationConstraintManager();
+    $constraints = parent::getConstraints();
+
+    $constraints[] = $constraint_manager->create('PartialToDate', []);
+
+    return $constraints;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
   public function preSave() {
     parent::preSave();
 

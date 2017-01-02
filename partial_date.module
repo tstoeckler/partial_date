@@ -98,16 +98,10 @@
 
 /**
  * Implements hook_field_validate().
- *
- * Possible error codes:
- * - 'xxxx': The partial_date year is not valid
- *
- * @see partial_date_field_widget_error().
+ * function partial_date_field_validate($obj_type, $object, $field, $instance, $langcode, $items, &$errors)
+ *   - moved to PartialDateConstraint
+ *   - moved to PartialToDateConstraint
  */
-function partial_date_field_validate($obj_type, $object, $field, $instance, $langcode, $items, &$errors) {
-  module_load_include('admin.inc', 'partial_date');
-  _partial_date_field_validate($obj_type, $object, $field, $instance, $langcode, $items, $errors);
-}
 
 /**
  * Implements hook_field_is_empty().
