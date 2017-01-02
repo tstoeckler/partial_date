@@ -283,7 +283,6 @@ function _partial_date_field_validate($entity_type, $entity, $field, $instance, 
     }
   }
   // @todo - ensure that the estimates match the date.
-  $estimate_options = partial_date_field_estimates($field);
 return;
 // TODO
   foreach ($items as $delta => $item) {

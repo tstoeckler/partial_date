@@ -83,76 +83,10 @@
  
 /**
  * Implements hook_field_load().
+ * function partial_date_field_load($entity_type, $entities, $field, $instances, $langcode, &$items, $age)
+ * function _partial_date_expand_estimate($key, &$item, $estimates, $is_start = TRUE) {
+ *   - moved to \Drupal\partial_date\Plugin\DataType\PartialDateTimeComputed::getValue()
  */
-function partial_date_field_load($entity_type, $entities, $field, $instances, $langcode, &$items, $age) {
-  $has_range = strpos($field['type'], '_range');
-  $estimates = partial_date_field_estimates($field);
-
-  foreach ($entities as $id => $entity) {
-    foreach ($items[$id] as $delta => &$item) {
-      $settings = $instances[$id]['widget']['settings'];
-
-      // Generate a cleaner array based storage of the values.
-      $item['data'] = empty($item['data']) ? array() : unserialize($item['data']);
-
-      $item['from'] = array();
-      if ($has_range) {
-        $item['to'] = array();
-      }
-      $item['check_approximate'] = empty($item['data']['check_approximate']) ? 0 : 1;
-
-      foreach (partial_date_components() as $key => $title) {
-        $item['from'][$key] = $item[$key];
-        // Clear auto-populated estimate values.
-        if (!empty($item['data'][$key . '_estimate_from_used'])) {
-          $item['from'][$key] = '';
-        }
-
-        unset($item[$key]);
-        if ($key != 'timezone') {
-          $item['from'][$key . '_estimate'] = isset($item['data'][$key . '_estimate']) ? $item['data'][$key . '_estimate'] : '';
-          _partial_date_expand_estimate($key, $item['from'], $estimates);
-        }
-        if ($has_range) {
-          $item['to'][$key] = $item[$key . '_to'];
-          unset($item[$key . '_to']);
-          // Clear auto-populated estimate values.
-          if (!empty($item['data'][$key . '_estimate_to_used'])) {
-            $item['to'][$key] = '';
-          }
-
-          if ($key != 'timezone') {
-            $item['to'][$key . '_estimate'] = isset($item['data'][$key . '_to_estimate']) ? $item['data'][$key . '_to_estimate'] : '';
-            _partial_date_expand_estimate($key, $item['to'], $estimates, FALSE);
-          }
-        }
-      }
-    }
-  }
-}
-
-function _partial_date_expand_estimate($key, &$item, $estimates, $is_start = TRUE) {
-  $item[$key . '_estimate_label'] = '';
-  $item[$key . '_estimate_value'] = NULL;
-
-  $value = $item[$key . '_estimate'];
-  if (!empty($value)) {
-    if (!empty($estimates[$key][$value])) {
-      $item[$key . '_estimate_label'] = $estimates[$key][$value];
-    }
-    list($start, $end) = explode('|', $value);
-    $item[$key . '_estimate_value'] = $is_start ? $start : $end;
-  }
-}
-
-/**
- * Helper function to load the estimate options from the field or instance
- * settings.
- */
-function partial_date_field_estimates($field) {
-  $config = \Drupal::configFactory()->get('partial_date.settings');
-  return $config->get('estimates');
-}
 
 /**
  * Implements hook_field_presave().
