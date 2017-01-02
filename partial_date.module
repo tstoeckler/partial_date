@@ -90,11 +90,11 @@
 
 /**
  * Implements hook_field_presave().
+ * function partial_date_field_presave($entity_type, $entity, $field, $instance, $langcode, &$items)
+ *   - moved to \Drupal\partial_date\Plugin\Field\FieldType\DateTimeRange::preSave
+ *   - moved to \Drupal\partial_date\Plugin\Field\FieldType\PartialDateTimeRange::preSave
+ *
  */
-function partial_date_field_presave($entity_type, $entity, $field, $instance, $langcode, &$items) {
-  module_load_include('admin.inc', 'partial_date');
-  _partial_date_field_presave($entity_type, $entity, $field, $instance, $langcode, $items);
-}
 
 /**
  * Implements hook_field_validate().

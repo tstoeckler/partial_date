@@ -156,15 +156,51 @@ class PartialDateTime extends FieldItemBase {
    * {@inheritdoc}
    */
   public function preSave() {
+    $data = $this->data;
+    $data['check_approximate'] = $this->check_approximate;
+
+    // Provide some default values for the timestamp components. Components with
+    // actual values will be replaced below.
+    $timestamp_components = [
+      'year' => PD2_YEAR_MIN,
+      'month' => 1,
+      'day' => 1,
+      'hour' => 0,
+      'minute' => 0,
+      'second' => 0,
+      'timezone' => '',
+    ];
     foreach (array_keys(partial_date_components()) as $component) {
+      // Synchronize the properties with the computed values.
       $from = $this->from;
       if (isset($from[$component])) {
         $this->{$component} = $from[$component];
       }
-    }
 
-    $data = $this->data;
-    $data['check_approximate'] = $this->check_approximate;
+      // Fill in any estimated values.
+      if ($component !== 'timezone') {
+        $data[$component . '_estimate'] = '';
+        $data[$component . '_estimate_from_used'] = FALSE;
+
+        if (!empty($from[$component . '_estimate'])) {
+          $estimate = $from[$component . '_estimate'];
+          $data[$component . '_estimate'] = $estimate;
+          list($estimate_from) = explode('|', $estimate);
+          if (!isset($from[$component]) || !strlen($from[$component])) {
+            $this->{$component} = $estimate_from;
+            $data[$component . '_estimate_from_used'] = TRUE;
+          }
+        }
+      }
+
+      // Build up components for the timestamp to use.
+      $value = $this->{$component};
+      if ($value && strlen($value)) {
+        $timestamp_components[$component] = $value;
+      }
+    }
+    $this->timestamp = partial_date_float($timestamp_components);
+
     $this->data = $data;
   }
 

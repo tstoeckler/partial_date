@@ -97,6 +97,80 @@ class PartialDateTimeRange extends PartialDateTime {
   /**
    * {@inheritdoc}
    */
+  public function preSave() {
+    parent::preSave();
+
+    $data = $this->data;
+
+    // Provide some default values for the timestamp components. Components with
+    // actual values will be replaced below.
+    $timestamp_components = [
+      'year' => PD2_YEAR_MAX,
+      'month' => 12,
+      // A sensible default for this will be generated below using the month.
+      'day' => 0,
+      'hour' => 23,
+      'minute' => 59,
+      'second' => 59,
+      'timezone' => '',
+    ];
+    foreach (array_keys(partial_date_components()) as $component) {
+      $property = $component . '_to';
+      $to = $this->to;
+      if (isset($to[$component])) {
+        $this->{$property} = $to[$component];
+      }
+
+      if ($component !== 'timezone') {
+        $data[$component . '_estimate_to_used'] = FALSE;
+
+        // The if-statements are broken up because $from_estimate_from is used
+        // below even if $to[$component] is not empty.
+        if (!empty($from[$component . '_estimate'])) {
+          list($from_estimate_from, $from_estimate_to) = explode('|', $from[$component . '_estimate']);
+          if (!isset($to[$component]) || !strlen($to[$component])) {
+            $this->{$property} = $from_estimate_to;
+            $data[$component . '_estimate_to_used'] = TRUE;
+          }
+        }
+
+        $data[$component . '_to_estimate'] = '';
+        if (!empty($to[$component . '_estimate'])) {
+          $estimate = $to[$component . '_estimate'];
+          $data[$component . '_to_estimate'] = $estimate;
+          list($to_estimate_from, $to_estimate_to) = explode('|', $estimate);
+          if (!isset($from[$component]) || !strlen($from[$component]) || $data[$component . '_estimate_from_used']) {
+            $this->{$component} = isset($from_estimate_from) ? min($from_estimate_from, $to_estimate_from) : $to_estimate_from;
+            $data[$component . '_estimate_from_used'] = TRUE;
+          }
+          if (!isset($to[$component]) || !strlen($to[$component]) || $data[$component . '_estimate_to_used']) {
+            $this->{$property} = isset($from_estimate_to) ? min($from_estimate_to, $to_estimate_to) : $to_estimate_to;
+            $data[$component . '_estimate_to_used'] = TRUE;
+          }
+        }
+      }
+
+      // Build up components for the timestamp to use.
+      $value = $this->{$component};
+      if ($value && strlen($value)) {
+        $timestamp_components[$component] = $value;
+      }
+    }
+    if (!$timestamp_components['day']) {
+      $month_table = partial_date_month_matrix($timestamp_components['year']);
+      if (isset($month_table[$timestamp_components['month'] - 1])) {
+        $timestamp_components['day'] = $month_table[$timestamp_components['month'] - 1];
+      }
+      else {
+        $timestamp_components['day'] = 31;
+      }
+    }
+    $this->timestamp_to = partial_date_float($timestamp_components);
+  }
+
+  /**
+   * {@inheritdoc}
+   */
   public function isEmpty() {
     $val_to = $this->get('timestamp_to')->getValue();
     return parent::isEmpty() && !isset($val_to);
