@@ -40,7 +40,7 @@ class PartialDateTimeRange extends PartialDateTime {
         continue;
       }
 
-      $properties[$key.'_to'] = DataDefinition::create('integer')
+      $properties[$key . '_to'] = DataDefinition::create('integer')
         ->setLabel($label. t(' end '))
         ->setDescription(t('The ' . $label . ' for the finishing date component.'))
         ->setRequired($minimum_components['to_granularity_' . $key]);
@@ -102,6 +102,14 @@ class PartialDateTimeRange extends PartialDateTime {
     $constraints = parent::getConstraints();
 
     $constraints[] = $constraint_manager->create('PartialToDate', []);
+    $constraints[] = $constraint_manager->create('ComplexData', [
+      'year_to' => [
+        'Range' => [
+          'min' => PD2_YEAR_MIN,
+          'max' => PD2_YEAR_MAX,
+        ],
+      ],
+    ]);
 
     return $constraints;
   }

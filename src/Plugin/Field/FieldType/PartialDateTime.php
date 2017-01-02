@@ -157,6 +157,14 @@ class PartialDateTime extends FieldItemBase {
     $constraints = parent::getConstraints();
 
     $constraints[] = $constraint_manager->create('PartialDate', []);
+    $constraints[] = $constraint_manager->create('ComplexData', [
+      'year' => [
+        'Range' => [
+          'min' => PD2_YEAR_MIN,
+          'max' => PD2_YEAR_MAX,
+        ],
+      ],
+    ]);
 
     return $constraints;
   }

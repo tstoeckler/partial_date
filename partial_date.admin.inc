@@ -43,22 +43,6 @@ function partial_date_field_presave_generate_storage_date($item, $end_date = FAL
   return $components;
 }
 
-/**
- * Helper for hook_field_validate() to test that the year in within range.
- */
-function partial_date_field_validate_year($item, $key) {
-  if (isset($item[$key]) && strlen($item[$key])) {
-    $year = $item[$key];
-    // Validate that it is a real integer.
-    if ((string) $year === (string) (int) $year) {
-      if ($year > PD2_YEAR_MIN || $year < PD2_YEAR_MAX) {
-        return;
-      }
-    }
-    return t('Year must be an integer value between %start and %end.', array('%start' => PD2_YEAR_MIN, '%end' => PD2_YEAR_MAX));
-  }
-}
-
 function _partial_date_inline_float_css($component = TRUE) {
   $language = \Drupal::languageManager()->getCurrentLanguage();
   // Language will be \Drupal\Core\Language\Language::\Drupal\Core\Language\Language::\Drupal\Core\Language\Language::\Drupal\Core\Language\Language::\Drupal\Core\Language\Language::LANGUAGE_LTR (0) or \Drupal\Core\Language\Language::\Drupal\Core\Language\Language::\Drupal\Core\Language\Language::\Drupal\Core\Language\Language::\Drupal\Core\Language\Language::LANGUAGE_RTL (1).
