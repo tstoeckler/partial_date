@@ -5,6 +5,7 @@ namespace Drupal\partial_date\Plugin\Field\FieldType;
 use Drupal\Core\Field\FieldStorageDefinitionInterface;
 use Drupal\Core\TypedData\DataDefinition;
 use Drupal\Core\TypedData\MapDataDefinition;
+use Drupal\partial_date\Plugin\DataType\PartialDateTimeComputed;
 
 /**
  * Plugin implementation of the 'partial_date' field type.
@@ -41,6 +42,8 @@ class PartialDateTimeRange extends PartialDateTime {
 
     $properties['to'] = MapDataDefinition::create()
       ->setLabel(t('To'))
+      ->setClass(PartialDateTimeComputed::class)
+      ->setSetting('range', 'to')
       ->setComputed(TRUE);
     return $properties;
   }

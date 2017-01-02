@@ -7,6 +7,7 @@ use Drupal\Core\Field\FieldStorageDefinitionInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\TypedData\DataDefinition;
 use Drupal\Core\TypedData\MapDataDefinition;
+use Drupal\partial_date\Plugin\DataType\PartialDateTimeComputed;
 
 /**
  * Plugin implementation of the 'partial_date' field type.
@@ -63,6 +64,8 @@ class PartialDateTime extends FieldItemBase {
 
     $properties['from'] = MapDataDefinition::create()
       ->setLabel(t('From'))
+      ->setClass(PartialDateTimeComputed::class)
+      ->setSetting('range', 'from')
       ->setComputed(TRUE);
 
     $properties['data'] = MapDataDefinition::create()
@@ -139,6 +142,22 @@ class PartialDateTime extends FieldItemBase {
       }
     }
     return $schema;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function preSave() {
+    foreach (array_keys(partial_date_components()) as $component) {
+      $from = $this->from;
+      if (isset($from[$component])) {
+        $this->{$component} = $from[$component];
+      }
+    }
+
+    $data = $this->data;
+    $data['check_approximate'] = $this->check_approximate;
+    $this->data = $data;
   }
 
   protected function deleteConfig($configName) {
