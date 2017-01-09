@@ -59,9 +59,9 @@ interface PartialDateFormatInterface extends ConfigEntityInterface {
   public function getDisplay($component);
 
   /**
-   * Gets format information about a given component.
+   * Gets information about a given component.
    *
-   * @param string $component
+   * @param string $component_name
    *   - year
    *   - month
    *   - day
@@ -86,7 +86,17 @@ interface PartialDateFormatInterface extends ConfigEntityInterface {
    *   The following keys are contained for all components:
    *   - weight: The weight of the component
    */
-  public function getFormat($component);
+  public function getComponent($component_name);
+
+  /**
+   * Gets a sorted list of components.
+   *
+   * @return array
+   *   An array of components keyed by component name. See
+   *   PartialDateFormatInterface::getComponent() about a list of component
+   *   names and the structure of the component information.
+   */
+  public function getComponents();
 
   /**
    * Gets the separator used for a given component.

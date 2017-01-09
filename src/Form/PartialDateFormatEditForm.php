@@ -171,7 +171,7 @@ class PartialDateFormatEditForm extends EntityForm {
 
     // Build the table rows and columns.
     foreach ($components as $key => $label) {
-      $component = $format->getFormat($key);
+      $component = $format->getComponent($key);
       $table[$key]['#attributes']['class'][] = 'draggable';
       $table[$key]['#weight'] = $component['weight'];
       $table[$key]['label']['#plain_text'] = $label;

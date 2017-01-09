@@ -104,32 +104,48 @@ class PartialDateFormat extends ConfigEntityBase implements PartialDateFormatInt
     return $this->get('meridiem');
   }
 
-  /**
-   * {@inheritdoc}
-   */
+   /**
+    * {@inheritdoc}
+    */
    public function getYearDesignation() {
      return $this->get('year_designation');
    }
 
-   /**
-    * {@inheritdoc}
-    */
+    /**
+     * {@inheritdoc}
+     */
     public function getDisplay($component) {
       assert('in_array($component, ["year", "month", "day", "hour", "minute", "second", "timezone"], TRUE)');
       return $this->get('display')[$component];
     }
 
-   /**
-    * {@inheritdoc}
-    */
-    public function getFormat($component) {
+    /**
+     * {@inheritdoc}
+     */
+    public function getComponent($component_name) {
       assert('in_array($component, ["year", "month", "day", "hour", "minute", "second", "timezone", "approx", "c1", "c2", "c3"], TRUE)');
-      return $this->get('components')[$component];
+      return $this->get('components')[$component_name];
     }
 
-   /**
-    * {@inheritdoc}
-    */
+    /**
+     * {@inheritdoc}
+     */
+    public function getComponents() {
+      $components = $this->get('components');
+      uasort($component, function (array $a, array $b) {
+        $a_weight = isset($a['weight']) ? $a['weight'] : 0;
+        $b_weight = isset($b['weight']) ? $b['weight'] : 0;
+        if ($a_weight == $b_weight) {
+          return 0;
+        }
+        return ($a_weight < $b_weight) ? -1 : 1;
+      });
+      return $components;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
     public function getSeparator($component) {
       assert('in_array($component, ["date", "time", "datetime", "range", "other"], TRUE)');
       return $this->get('separator')[$component];
