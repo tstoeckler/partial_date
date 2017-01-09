@@ -6,6 +6,26 @@
  */
 
 /**
+ * Prepares variables for partial dates.
+ *
+ * Default template: partial-date.html.twig
+ *
+ * @param array $variables
+ *   An array of template variables containing:
+ *   - date: An array of partial date information.
+ *   - format: The partial date format.
+ *   - is_approximate: Whether or not this date is to be displayed in the
+ *     approximate form.
+ */
+function template_preprocess_partial_date(array &$variables) {
+  $item = $variables['item'];
+  $settings = $variables['settings'];
+  $settings['format'] = $variables['format'];
+  $settings['is_approximate'] = !empty($variables['is_approximate']);
+  return partial_date_format($item, $settings);
+}
+
+/**
  * Workaround for theming the range elements inline.
  */
 function theme_partial_date_inline_form_element($variables) {

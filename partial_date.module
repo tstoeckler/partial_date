@@ -222,67 +222,26 @@ function partial_date_theme() {
       'file' => 'partial_date.theme.inc',
     ),
     'partial_date' => array(
-      'variables' => array('item' => NULL, 'format' => 'short', 'settings' => array()),
+      'variables' => array(
+        'date' => NULL,
+        'format' => 'short',
+        'is_approximate' => FALSE,
+      ),
+      'file' => 'partial_date.theme.inc',
     ),
     'partial_date_range' => array(
-      'variables' => array('from' => NULL, 'to' => NULL, 'settings' => array()),
+      'variables' => array(
+        'from' => NULL,
+        'to' => NULL,
+        'separator' => NULL,
+      ),
+      'file' => 'partial_date.theme.inc',
     ),
     'partial_date_inline_form_element' => array(
       'render element' => 'element',
       'file' => 'partial_date.theme.inc',
     ),
   );
-}
-
-function theme_partial_date_range($variables) {
-  $to = $variables['to'];
-  $from = $variables['from'];
-  $settings = $variables['settings'];
-  $separator = '';
-//TODO "read range separator from partial_date.format.???.separators.range:"
-//  if (!empty($settings['component_settings'])
-//    && !empty($settings['component_settings']['separator'])
-//    && !empty($settings['component_settings']['separator']['range'])) {
-//    $separator = $settings['component_settings']['separator']['range'];
-//  }
-  if (!strlen($separator)) {
-    $separator = t(' to ', array(), array('context' => 'datetime'));
-  }
-  return t('@from@separator@to', array('@from' => $from, '@to' => $to, '@separator' => $separator));
-}
-
-/**
- * TODO
- *
- * Template preprocess function to add theme suggestions for the various
- * partial date format types.
- */
-
-/**
- * The partial date theme callback.
- *
- * Allows easy override of the format if required.
- */
-function theme_partial_date($variables) {
-  $item = $variables['item'];
-  $settings = $variables['settings'];
-  $settings['format'] = $variables['format'];
-  $settings['is_approximate'] = !empty($variables['is_approximate']);
-  return partial_date_format($item, $settings);
-}
-
-function partial_date_reduce_range_values(&$from, &$to) {
-  // Reduce dates on granularity values.
-  foreach (array_keys(partial_date_components()) as $key) {
-    // Excat match as we need to compare '' to 0.
-    if (!isset($from[$key]) && !isset($to[$key])) {
-      continue;
-    }
-    elseif ((isset($from[$key]) || !isset($to[$key])) || $from[$key] !== $to[$key]) {
-      break;
-    }
-    $from[$key] = NULL;
-  }
 }
 
 ################################################################################
