@@ -30,6 +30,14 @@ class PartialDateSettingsForm extends ConfigFormBase {
   
   public function buildForm(array $form, FormStateInterface $form_state) {
     $config = $this->config(self::SETTINGS);
+    $estimates = $config->get('estimates') + array(
+      'year' => array(),
+      'month' => array(),
+      'day' => array(),
+      'hour' => array(),
+      'minute' => array(),
+    );
+    
     //Only show setting you actually want users to edit
     //TODO: these are just for demo, probably should not be modified by users
     $form['txt_inline_styles'] = array(
@@ -58,7 +66,7 @@ class PartialDateSettingsForm extends ConfigFormBase {
           . '<strong>Note:</strong> if used, the formatters will replace any corresponding date / time component with the options label value.'),
     );
     foreach ($this->estimateComponents() as $key => $label) {
-      $lines = $config->get('estimates.'.$key);
+      $lines = isset($estimates[$key]) ? $estimates[$key] : array();
       $form['estimates'][$key] = array(
         '#type' => 'textarea',
         '#title' => t('%label range options', array('%label' => $label), array('context' => 'datetime settings')),
@@ -81,7 +89,7 @@ class PartialDateSettingsForm extends ConfigFormBase {
 
     foreach ($this->estimateComponents() as $key => $label) {
       $lines = $form_state->getValue('estimates')[$key];
-      $config->set('estimates.'.$key, explode('\n', $lines));
+      $config->set('estimates.'.$key, explode("\n", $lines));
     }
 
     $config->save();

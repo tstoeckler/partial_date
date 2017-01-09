@@ -92,7 +92,17 @@ class PartialDateFormat extends ConfigEntityBase implements PartialDateFormatInt
     'other' => ' ',
   );
   
+  public function isYearBeforeMonth() {
+    $yearWeight  = $this->components['year']['weight'] ?: 0;
+    $monthWeight = $this->components['month']['weight'] ?: 0;
+    return $yearWeight <= $monthWeight;
+  }
   
+  public function isMonthBeforeDay() {
+    $monthWeight = $this->components['month']['weight'] ?: 0;
+    $dayWeight   = $this->components['day']['weight'] ?: 0;
+    return $monthWeight <= $dayWeight;
+  }
   
   /**
    * Helper functions. Should be moved to configuration (yml files), altough not really user configurable.
@@ -119,17 +129,6 @@ class PartialDateFormat extends ConfigEntityBase implements PartialDateFormatInt
       'bc' => t('Anno Domini (BC only)', array(), array('context' => 'datetime')),
       'ce' => t('Common Era (BCE/CE)', array(), array('context' => 'datetime')),
       'bce' => t('Common Era (BCE only)', array(), array('context' => 'datetime'))
-    );
-  }
-
-  public function partial_date_estimate_handling_options() {
-    return array(
-      'none' => t('Hide', array(), array('context' => 'datetime')),
-      'estimate_label' => t('Estimate label', array(), array('context' => 'datetime')),
-      'estimate_range' => t('Estimate range', array(), array('context' => 'datetime')),
-      'estimate_component' => t('Start (single or from dates) or End (to dates) of estimate range', array(), array('context' => 'datetime')),
-      'date_only' => t('Date component if set', array(), array('context' => 'datetime')),
-      'date_or' => t('Date component with fallback to estimate component', array(), array('context' => 'datetime')),
     );
   }
 

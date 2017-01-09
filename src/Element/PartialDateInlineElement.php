@@ -21,8 +21,8 @@ class PartialDateInlineElement extends PartialDateElement {
    */
   public function getInfo() {
     return [
-      '#theme' => 'partial_date_range_inline_element',
-      '#theme_wrappers' => array('partial_date_inline_form_element'),
+//      '#theme' => 'partial_date_range_inline_element',
+//      '#theme_wrappers' => array('partial_date_inline_form_element'),
     ] + parent::getInfo();
   }
   

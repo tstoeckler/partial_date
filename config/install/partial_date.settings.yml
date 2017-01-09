@@ -11,14 +11,14 @@ estimates:
         - '1900|1999|20th century'
         - '2000|2099|21st century'
     month:
-        - '11|1|Winter'
-        - '2|4|Spring'
-        - '5|7|Summer'
-        - '8|10|Autumn'
+        - '12|2|Winter'
+        - '3|5|Spring'
+        - '6|8|Summer'
+        - '9|11|Autumn'
     day:
-        - '0|12|The start of the month'
+        - '1|10|The start of the month'
         - '10|20|The middle of the month'
-        - '18|31|The end of the month'
+        - '21|31|The end of the month'
     hour:
         - '6|18|Day time'
         - '6|12|Morning'

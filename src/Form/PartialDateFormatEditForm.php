@@ -6,6 +6,7 @@ use Drupal\Core\Entity\EntityForm;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Entity\Query\QueryFactory;
 use Symfony\Component\DependencyInjection\ContainerInterface;
+use Drupal\Component\Utility\SortArray;
 use Drupal\partial_date\Entity\PartialDateFormat;
 
 /**
@@ -95,7 +96,7 @@ class PartialDateFormatEditForm extends EntityForm {
       $elements[$key] = array(
         '#type' => 'select',
         '#title' => t('Display source for %label', array('%label' => $label)),
-        '#options' => $format->partial_date_estimate_handling_options(),
+        '#options' => $this->partial_date_estimate_handling_options(),
         '#default_value' => $format->display[$key],
         '#required' => TRUE,
       );
@@ -173,7 +174,7 @@ class PartialDateFormatEditForm extends EntityForm {
       '#tableselect' => FALSE,
       '#tabledrag' => array(
         array(
-          'action' => 'weight',
+          'action' => 'order',
           'relationship' => 'sibling',
           'group' => 'partial-date-format-order-weight',
         )
@@ -181,8 +182,8 @@ class PartialDateFormatEditForm extends EntityForm {
     );
 
     // Build the table rows and columns.
-    foreach ($components as $key => $label) {
-      $component = $format->components[$key];
+    foreach ($format->components as $key => $component) {
+      $label = $components[$key];
       $table[$key]['#attributes']['class'][] = 'draggable';
       $table[$key]['#weight'] = $component['weight'];
       $table[$key]['label']['#plain_text'] = $label;
@@ -257,4 +258,15 @@ class PartialDateFormatEditForm extends EntityForm {
     return (bool) $entity;
   }
   
+  public function partial_date_estimate_handling_options() {
+    return array(
+      'none' => t('Hide', array(), array('context' => 'datetime')),
+      'estimate_label' => t('Estimate label', array(), array('context' => 'datetime')),
+      'estimate_range' => t('Estimate range', array(), array('context' => 'datetime')),
+      'estimate_component' => t('Start (single or from dates) or End (to dates) of estimate range', array(), array('context' => 'datetime')),
+      'date_only' => t('Date component if set', array(), array('context' => 'datetime')),
+      'date_or' => t('Date component with fallback to estimate component', array(), array('context' => 'datetime')),
+    );
+  }
+
 }
