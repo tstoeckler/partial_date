@@ -7,8 +7,12 @@
 
 namespace Drupal\partial_date\Plugin\Field\FieldFormatter;
 
+use Drupal\Core\Entity\EntityTypeManagerInterface;
+use Drupal\Core\Field\FieldDefinitionInterface;
 use Drupal\Core\Field\FormatterBase;
 use DateTime;
+use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
  * Plugin implementation for Partial Date formatter.
@@ -31,7 +35,56 @@ use DateTime;
  *   },
  * )
  */
-class PartialDateFormatter extends FormatterBase {
+class PartialDateFormatter extends FormatterBase implements ContainerFactoryPluginInterface {
+
+  /**
+   * The partial date format storage.
+   *
+   * @var \Drupal\Core\Entity\EntityStorageInterface
+   */
+  protected $partialDateFormatStorage;
+
+  /**
+   * Constructs a partial date formatter.
+   *
+   * @param string $plugin_id
+   *   The plugin_id for the formatter.
+   * @param mixed $plugin_definition
+   *   The plugin implementation definition.
+   * @param \Drupal\Core\Field\FieldDefinitionInterface $field_definition
+   *   The definition of the field to which the formatter is associated.
+   * @param array $settings
+   *   The formatter settings.
+   * @param string $label
+   *   The formatter label display setting.
+   * @param string $view_mode
+   *   The view mode.
+   * @param array $third_party_settings
+   *   Any third party settings.
+   * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
+   *   The entity type manager.
+   */
+
+  public function __construct($plugin_id, $plugin_definition, FieldDefinitionInterface $field_definition, array $settings, $label, $view_mode, array $third_party_settings, EntityTypeManagerInterface $entity_type_manager) {
+    parent::__construct($plugin_id, $plugin_definition, $field_definition, $settings, $label, $view_mode, $third_party_settings);
+    $this->partialDateFormatStorage = $entity_type_manager->getStorage('partial_date');
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition) {
+    return new static(
+      $plugin_id,
+      $plugin_definition,
+      $configuration['field_definition'],
+      $configuration['settings'],
+      $configuration['label'],
+      $configuration['view_mode'],
+      $configuration['third_party_settings'],
+      $container->get('entity_type.manager')
+    );
+  }
 
   /**
    * {@inheritdoc}
@@ -39,7 +92,8 @@ class PartialDateFormatter extends FormatterBase {
   public static function defaultSettings() {
     return array(
       'use_override' => 'none',
-      'format' => 'short', 
+      'format' => 'short',
+      'reduce' => TRUE,
     ) + parent::defaultSettings();
   }
   
@@ -49,22 +103,20 @@ class PartialDateFormatter extends FormatterBase {
   public function settingsForm(array $form, \Drupal\Core\Form\FormStateInterface $form_state) {
     $elements = array();
 
-//    $override = empty($settings['use_override'])? $settings['use_override'] : 'short_long';
     $elements['use_override'] = array(
       '#title' => t('Use date descriptions rather than date'),
       '#type' => 'radios',
       '#default_value' => $this->getSetting('use_override'),
       '#required' => TRUE,
-      '#options' => $this->partial_date_txt_override_options(),
+      '#options' => $this->overrideOptions(),
       '#description' => t('This setting allows date values to be replaced with user specified date descriptions, if applicable. This will use the first non-empty value.'),
     );
-//    $format = isset($settings['format']) ? $settings['format'] : 'medium';
     $elements['format'] = array(
       '#title' => t('Partial date format'),
       '#type' => 'select',
       '#default_value' => $this->getSetting('format'),
       '#required' => TRUE,
-      '#options' => $this->partial_date_format_types(),
+      '#options' => $this->formatOptions(),
       '#id' => 'partial-date-format-selector',
       '#attached' => array(
         'js' => array(drupal_get_path('module', 'partial_date') . '/partial-date-admin.js'),
@@ -82,10 +134,10 @@ class PartialDateFormatter extends FormatterBase {
   public function settingsSummary() {
     $summary = array();
     if ($this->getSetting('use_override') != 'none') {
-      $overrides = $this->partial_date_txt_override_options();
+      $overrides = $this->overrideOptions();
       $summary[] = t(' User text: ') . $overrides[$this->getSetting('use_override')];
     }
-    $types = $this->partial_date_format_types();
+    $types = $this->formatOptions();
     $summary[] = t(' Format: ') . $types[$this->getSetting('format')];
     $item = $this->partial_date_generate_date();
     $example = $this->formatItem($item);
@@ -97,6 +149,25 @@ class PartialDateFormatter extends FormatterBase {
     );
     $summary[] = $example;
     return $summary;
+  }
+
+  protected function overrideOptions() {
+    return array(
+      'none' => t('Use date only', array(), array('context' => 'datetime')),
+      'short' => t('Use short description', array(), array('context' => 'datetime')),
+      'long' => t('Use long description', array(), array('context' => 'datetime')),
+      'long_short' => t('Use long or short description', array(), array('context' => 'datetime')),
+      'short_long' => t('Use short or long description', array(), array('context' => 'datetime')),
+    );
+  }
+
+  function formatOptions() {
+    $formats = $this->partialDateFormatStorage->loadMultiple();
+    $options = array();
+    foreach($formats as $key => $format) {
+      $options[$key] = $format->label();
+    }
+    return $options;
   }
   
   /**
@@ -170,29 +241,18 @@ class PartialDateFormatter extends FormatterBase {
           $to = partial_date_field_widget_reduce_date_components($item['to'], FALSE);
         }
 
-        $markup = '';
         if ($to && $from) {
-          $markup = partial_date_render_range($from, $to, $display['settings']);
+          $element[$delta] = $this->buildRange($from, $to);
         }
-        elseif ($to xor $from) {
-          $markup = partial_date_render($from ? $from : $to, $display['settings']);
+        elseif ($to) {
+          $element[$delta] = $this->buildDate($to);
         }
-        unset($display['settings']['is_approximate']);
-        if ($markup) {
-          $element[$delta] = array('#markup' => $markup);
+        elseif ($from) {
+          $element[$delta] = $this->buildDate($from);
         }
       }
     }
     return $element;
-  }
-  
-  protected function loadFormats() {
-    $storage = \Drupal::entityTypeManager()->getStorage('partial_date_format');
-    $qry = \Drupal::entityQuery('partial_date_format')
-//      ->condition('id', $id)
-      ->execute();
-    $formats = $storage->loadMultiple($qry);
-    return $formats;
   }
 
 ################################################################################
@@ -217,97 +277,39 @@ class PartialDateFormatter extends FormatterBase {
 #                                                                              #
 ################################################################################
 
-  function partial_date_render_range($from = NULL, $to = NULL, $settings = array()) {
-    if (empty($from) && empty($to)) {
-      return '';
-    }
-    // TODO: Make this configurable.
-    $settings += array(
-      'reduce' => TRUE,
-      'format' => 'short',
-    );
-    if ($settings['reduce']) {
-      partial_date_reduce_range_values($from, $to);
+  protected function buildRange($from, $to) {
+    if ($this->getSetting('reduce')) {
+      $this->reduceRangeValues($from, $to);
     }
 
-    $from = partial_date_render($from, $settings);
-    $to = partial_date_render($to, $settings);
-
-    if ($to && $from) {
-      // @FIXME
-  // theme() has been renamed to _theme() and should NEVER be called directly.
-  // Calling _theme() directly can alter the expected output and potentially
-  // introduce security issues (see https://www.drupal.org/node/2195739). You
-  // should use renderable arrays instead.
-  // 
-  // 
-  // @see https://www.drupal.org/node/2195739
-  // return theme('partial_date_range', array('from' => $from, 'to' => $to, 'settings' => $settings));
-
-    }
-    // One or both will be empty.
-    return $from . $to;
+    return [
+      '#theme' => 'partial_date_range',
+      '#from' => $this->buildDate($from),
+      '#to' => $this->buildDate($to),
+      '#separator' => '',
+    ];
   }
 
-  function partial_date_render($item, $settings = array()) {
-    if (empty($item)) {
-      return '';
+  protected function reduceRangeValues(&$from, &$to) {
+    foreach (array_keys(partial_date_components()) as $key) {
+      if (!isset($from[$key]) && !isset($to[$key])) {
+        continue;
+      }
+      elseif (!isset($from[$key]) || !isset($to[$key]) || $from[$key] !== $to[$key]) {
+        return;
+      }
+      $from[$key] = NULL;
     }
-//    $settings += array(
-//      'format' => 'short',
-//      'is_approximate' => 0,
-//    );
+  }
 
-    // @FIXME
-  // theme() has been renamed to _theme() and should NEVER be called directly.
-  // Calling _theme() directly can alter the expected output and potentially
-  // introduce security issues (see https://www.drupal.org/node/2195739). You
-  // should use renderable arrays instead.
-  // 
-  // 
-  // @see https://www.drupal.org/node/2195739
-  // return theme('partial_date', array(
-  //     'item' => $item,
-  //     'settings' => $settings['component_settings'],
-  //     'format' => $settings['format'],
-  //     'is_approximate' => $settings['is_approximate'],
-  //   ));
+  function buildDate($date) {
     return array(
       '#theme' => 'partial_date',
-      'item' => $item,
+      '#date' => $date,
       '#format' => $this->getSetting('format'),
-      'is_approximate' => $this->getSetting('is_approximate'),
+      '#is_approximate' => $this->getSetting('is_approximate'),
     );
   }
-
-  function partial_date_format_types() {
-    $formats = $this->loadFormats();
-    $types = array();
-    foreach($formats as $key => $format) {
-      $types[$key] = $format->label(); 
-    }
-    return $types;
-  }
-
-  function partial_date_format_settings($type) {
-    $settings = $this->getSettings();
-    if (!isset($settings[$type])) {
-      $type = 'short'; //TODO set a configuration for default format
-    }
-    return $settings[$type];
-  }
-
-
-  function partial_date_txt_override_options() {
-    return array(
-      'none' => t('Use date only', array(), array('context' => 'datetime')),
-      'short' => t('Use short description', array(), array('context' => 'datetime')),
-      'long' => t('Use long description', array(), array('context' => 'datetime')),
-      'long_short' => t('Use long or short description', array(), array('context' => 'datetime')),
-      'short_long' => t('Use short or long description', array(), array('context' => 'datetime')),
-    );
-  }
-
 
   /**
    * Helper function to assign the correct components into an array that the
@@ -390,15 +392,10 @@ class PartialDateFormatter extends FormatterBase {
     return FALSE;
   }
 
-  protected function getCurrentFormat(){
-    $formats = $this->loadFormats();
-    $current = $this->getSetting('format');
-    return $formats[$current];
-  }
-
 public function formatItem($item) {
   $components = array();
-  $format = $this->getCurrentFormat();
+  /** @var \Drupal\partial_date\Entity\PartialDateFormatInterface $format */
+  $format = $this->partialDateFormatStorage->load($this->getSetting('format'));
   uasort($format->components, 'partial_date_sort');
   // Enforce meridiem if we have a 12 hour format.
   if (isset($format->components['hour'])
