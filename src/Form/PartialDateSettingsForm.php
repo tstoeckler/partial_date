@@ -24,6 +24,14 @@ class PartialDateSettingsForm extends ConfigFormBase {
 
   public function buildForm(array $form, FormStateInterface $form_state) {
     $config = $this->config(self::SETTINGS);
+    $estimates = $config->get('estimates') + array(
+      'year' => array(),
+      'month' => array(),
+      'day' => array(),
+      'hour' => array(),
+      'minute' => array(),
+    );
+
     //Only show setting you actually want users to edit
     //TODO: these are just for demo, probably should not be modified by users
     $form['txt_inline_styles'] = array(
@@ -48,5 +56,5 @@ class PartialDateSettingsForm extends ConfigFormBase {
     $config->save();
     parent::submitForm($form, $form_state);
   }
-  
+
 }
