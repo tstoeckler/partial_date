@@ -188,6 +188,13 @@ class PartialDateTime extends FieldItemBase {
    * {@inheritdoc}
    */
   public function preSave() {
+    parent::preSave();
+    $this->normalizeValues();
+    $values = $this->fillEmptyValues();
+    //Calculate timestamps
+    $this->set('timestamp', $this->getTimestamp($values));
+    $this->set('timestamp_to', $this->getTimestampTo($values));
+
     $data = $this->data;
     $data['check_approximate'] = $this->check_approximate;
 
@@ -298,26 +305,6 @@ class PartialDateTime extends FieldItemBase {
   /**
    * {@inheritdoc}
    */
-  public static function defaultFieldSettings() {
-    return array(
-      'has_time' => TRUE,
-      'has_range' => TRUE,
-      'require_consistency' => FALSE,
-      'minimum_components' => array(
-        'year' => FALSE,
-        'month' => FALSE,
-        'day' => FALSE,
-        'hour' => FALSE,
-        'minute' => FALSE,
-        'second' => FALSE,
-      ),
-    ) + parent::defaultFieldSettings();
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function fieldSettingsForm(array $form, FormStateInterface $form_state) {
   public function storageSettingsForm(array &$form, FormStateInterface $form_state, $has_data) {
     $settings = $this->getSettings();
     $elements['minimum_components'] = array(
@@ -344,6 +331,7 @@ class PartialDateTime extends FieldItemBase {
       '#type' => 'checkbox',
       '#title' => t('Short date text'),
       '#default_value' => $settings['minimum_components']['txt_short'],
+    );
     //debug_only:  var_dump($settings);
     $elements = array();
     $elements['has_time'] = array(
@@ -370,6 +358,7 @@ class PartialDateTime extends FieldItemBase {
       '#type' => 'checkbox',
       '#title' => t('Long date text'),
       '#default_value' => $settings['minimum_components']['txt_long'],
+    );
     $elements['minimum_components'] = array(
       '#type' => 'partial_date_components_element',
       '#title' => t('Minimum components'),
@@ -383,18 +372,6 @@ class PartialDateTime extends FieldItemBase {
         ),
     );
     return $elements;
-  }
-  
-  /**
-   * {@inheritdoc}
-   */
-  public function preSave() {
-    parent::preSave();
-    $this->normalizeValues();
-    $values = $this->fillEmptyValues();
-    //Calculate timestamps
-    $this->set('timestamp', $this->getTimestamp($values));
-    $this->set('timestamp_to', $this->getTimestampTo($values));
   }
 
   /*
@@ -487,6 +464,7 @@ class PartialDateTime extends FieldItemBase {
       }
     }
     return FALSE;
+  }
 
 
   /**
@@ -571,6 +549,9 @@ class PartialDateTime extends FieldItemBase {
    */
   public static function defaultStorageSettings() {
     $settings = array(
+      'has_time' => TRUE,
+      'has_range' => TRUE,
+      'require_consistency' => FALSE,
       'minimum_components' => array(
         'from_granularity_year' => FALSE,
         'from_granularity_month' => FALSE,
