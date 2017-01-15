@@ -224,7 +224,7 @@ class PartialDateTime extends FieldItemBase {
   /**
    * {@inheritdoc}
    */
-  public static function defaultFieldSettings() {
+  public static function defaultStorageSettings() {
     return array(
       'has_time' => TRUE,
       'has_range' => TRUE,
@@ -237,13 +237,13 @@ class PartialDateTime extends FieldItemBase {
         'minute' => FALSE,
         'second' => FALSE,
       ),
-    ) + parent::defaultFieldSettings();
+    ) + parent::defaultStorageSettings();
   }
-  
+
   /**
    * {@inheritdoc}
    */
-  public function fieldSettingsForm(array $form, FormStateInterface $form_state) {
+  public function storageSettingsForm(array &$form, FormStateInterface $form_state, $has_data) {
     $settings = $this->getSettings();
     //debug_only:  var_dump($settings);
     $elements = array();
@@ -385,6 +385,83 @@ class PartialDateTime extends FieldItemBase {
     }
     return FALSE;
   }
-  
-  
+
+
+  /**
+   * {@inheritdoc}
+   */
+  public function fieldSettingsForm(array $form, FormStateInterface $form_state) {
+    $settings = $this->getSettings();
+    $elements['estimates'] = array(
+      '#type' => 'details',
+      '#title' => t('Base estimate values'),
+      '#description' => t('These fields provide options for additional fields that can be used to represent corresponding date / time components. They define time periods where an event occured when exact details are unknown. All of these fields have the format "start|end|label", one per line, where start marks when this period started, end marks the end of the period and the label is shown to the user. Instance settings will be used whenever possible on forms, but views integration (once completed) will use the field values. Note that if used, the formatters will replace any corresponding date / time component with the options label value.'),
+      '#open' => FALSE,
+    );
+    foreach (partial_date_components() as $key => $label) {
+      if ($key == 'timezone') {
+        continue;
+      }
+      $value = array();
+      foreach ($settings['estimates'][$key] as $range => $option_label) {
+        $value[] = $range . '|' . $option_label;
+      }
+      $elements['estimates'][$key] = array(
+        '#type' => 'textarea',
+        '#title' => t('%label range options', array('%label' => $label), array('context' => 'datetime settings')),
+        '#default_value' => implode("\n", $value),
+        '#description' => t('Provide relative approximations for this date / time component.'),
+        '#element_validate' => array(static::class . '::validateEstimateOptions'),
+        '#date_component' => $key,
+      );
+    }
+
+    return $elements;
+  }
+
+  /**
+   * Form element validation handler for estimate options.
+   */
+  public static function validateEstimateOptions(&$element, FormStateInterface &$form_state, &$complete_form) {
+    $items = array();
+    foreach (explode("\n", $element['#value']) as $line) {
+      $line = trim($line);
+      if (!empty($line)) {
+        list($from, $to, $label) = explode('|', $line . '||');
+        if (!strlen($from) && !strlen($to)) {
+          continue;
+        }
+        $label = trim($label);
+        if (empty($label)) {
+          $form_state->setError($element, t('The label for the keys %keys is required.', array('%keys' => $from . '|' . $to)));
+        }
+        elseif (!is_numeric($from) || !is_numeric($to)) {
+          $form_state->setError($element, t('The keys %from and %to must both be numeric.', array('%from' => $from, '%to' => $to)));
+        }
+        else {
+          // We need to preserve empty strings, so cast to temp variables.
+          $_from = (int) $from;
+          $_to = (int) $to;
+          $limits = array(
+            'month' => 12,
+            'day' => 31,
+            'hour' => 23,
+            'minute' => 59,
+            'second' => 59,
+          );
+          if (isset($limits[$element['#date_component']])) {
+            $limit = $limits[$element['#date_component']];
+            if ($_to > $limit || $_to < 0 || $_from > $limit || $_from < 0) {
+              $form_state->setError($element, t('The keys %from and %to must be within the range 0 to !max.', array('%from' => $_from, '%to' => $_to, '!max' => $limit)));
+              continue;
+            }
+          }
+          $items[$from . '|' . $to] = $label;
+        }
+      }
+    }
+
+    $form_state->setValueForElement($element, $items);
+  }
+
 }
