@@ -491,7 +491,7 @@ class PartialDateTime extends FieldItemBase {
         '#title' => t('%label range options', array('%label' => $label), array('context' => 'datetime settings')),
         '#default_value' => implode("\n", $value),
         '#description' => t('Provide relative approximations for this date / time component.'),
-        '#element_validate' => array('partial_date_field_estimates_validate_parse_options'),
+        '#element_validate' => array(static::class . '::validateEstimateOptions'),
         '#date_component' => $key,
       );
     }
