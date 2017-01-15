@@ -156,14 +156,6 @@ function partial_date_help($route_name, RouteMatchInterface $route_match) {
 //  }
 //}
 //
-/**
- * Helper function to load the estimate options from the field or instance
- * settings.
- */
-function partial_date_field_estimates($field) {
-  $config = \Drupal::configFactory()->get('partial_date.settings');
-  return $config->get('estimates');
-}
 
 /**
  * Implements hook_field_presave().
