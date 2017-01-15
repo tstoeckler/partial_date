@@ -193,8 +193,7 @@ class PartialDateWidget extends WidgetBase {
    * If no estimates are usable, return FALSE
    */
   protected function buildEstimatesElement(array $estimates) {
-    $config = \Drupal::config('partial_date.settings');
-    $options = $config->get('estimates');
+    $options = $this->fieldDefinition->getSetting('estimates');
     $help_txt = $this->getWidgetHelpText();
     $has_content = FALSE;
     $element = array(
