@@ -162,3 +162,46 @@ partial_date.format.component_format:
         empty: 
             type: string
             label: 'empty'
+
+field.field_settings.partial_date_time:
+  type: mapping
+  label: 'Partial date time field settings'
+  mapping:
+    path:
+      type: string
+    hide_blank_items:
+      type: boolean
+    estimates:
+      type: mapping
+      label: 'Estimates'
+      mapping:
+        year:
+          type: sequence
+          label: 'Year estimates'
+          sequence:
+            type: string
+        month:
+          type: sequence
+          label: 'Month estimates'
+          sequence:
+            type: string
+        day:
+          type: sequence
+          label: 'Day estimates'
+          sequence:
+            type: string
+        hour:
+          type: sequence
+          label: 'Hour estimates'
+          sequence:
+            type: string
+        minute:
+          type: sequence
+          label: 'Minute estimates'
+          sequence:
+            type: string
+        second:
+          type: sequence
+          label: 'Second estimates'
+          sequence:
+            type: string
