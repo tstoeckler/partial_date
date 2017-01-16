@@ -43,9 +43,6 @@ class PartialDateTime extends FieldItemBase {
     $properties['timestamp'] = DataDefinition::create('float')
       ->setLabel(t('Timestamp'))
       ->setDescription('Contains best approximation for date value');
-    $properties['timestamp_to'] = DataDefinition::create('float')
-      ->setLabel(t('End timestamp'))
-      ->setDescription('Contains the best approximation for end value of the partial date');
     $properties['txt_short'] = DataDefinition::create('string')
       ->setLabel(t('Short text'))
       ->setRequired($minimum_components['txt_short']);
@@ -105,14 +102,6 @@ class PartialDateTime extends FieldItemBase {
           'default' => 0,
           'sortable' => TRUE,
         ),
-        'timestamp_to' => array(
-          'type' => 'float',
-          'size' => 'big',
-          'description' => 'The calculated timestamp for end date stored in UTC as a float for unlimited date range support.',
-          'not null' => TRUE,
-          'default' => 0,
-          'sortable' => TRUE,
-        ),
         // These are instance settings, so add to the schema for every field.
         'txt_short' => array(
           'type' => 'varchar',
@@ -136,7 +125,6 @@ class PartialDateTime extends FieldItemBase {
       ),
       'indexes' => array(
         'main' => array('timestamp'),
-        'by_end' => array('timestamp_to'),
       ),
     );
 

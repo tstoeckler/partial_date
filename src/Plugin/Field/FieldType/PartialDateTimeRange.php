@@ -78,7 +78,7 @@ class PartialDateTimeRange extends PartialDateTime {
       'default' => 0,
       'sortable' => TRUE,
     ];
-    $schema['indexes']['timestamp_to'] = ['timestamp_to'];
+    $schema['indexes']['by_end'] = ['timestamp_to'];
 
     foreach (partial_date_components() as $key => $label) {
       if ($key == 'timezone') {
