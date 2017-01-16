@@ -32,7 +32,7 @@ class PartialDateTimeRange extends PartialDateTime {
 
     $properties['timestamp_to'] = DataDefinition::create('float')
       ->setLabel(t('End timestamp'))
-      ->setDescription('Contains the end value of the partial date')
+      ->setDescription('Contains the best approximation for end value of the partial date')
       ->setRequired(TRUE);
 
     foreach (partial_date_components() as $key => $label) {
