@@ -48,9 +48,6 @@ class PartialDateTime extends FieldItemBase {
     $properties['timestamp'] = DataDefinition::create('float')
       ->setLabel(t('Timestamp'))
       ->setDescription('Contains best approximation for date value');
-    $properties['timestamp_to'] = DataDefinition::create('float')
-      ->setLabel(t('End timestamp'))
-      ->setDescription('Contains the best approximation for end value of the partial date');
     $properties['txt_short'] = DataDefinition::create('string')
       ->setLabel(t('Short text'));
     $properties['txt_long'] = DataDefinition::create('string')
@@ -60,17 +57,14 @@ class PartialDateTime extends FieldItemBase {
       if ($key == 'timezone') {
         $properties[$key] = DataDefinition::create('string')
           ->setLabel($label);
-      } else {
-        $startDescription = t('The ' . $label . ' for the starting date component.');
-        $endDescription   = t('The ' . $label . ' for the finishing date component.');
+      }
+      else {
         $properties[$key] = DataDefinition::create('integer')
-           ->setLabel($label)
-           ->setDescription($startDescription) ;
-        $properties[$key.'_to'] = DataDefinition::create('integer')
-           ->setLabel($label. t(' end '))
-           ->setDescription($endDescription) ;
-      } 
+          ->setLabel($label)
+          ->setDescription(t('The ' . $label . ' for the starting date component.'));
+      }
     }
+
     return $properties;
   }
 
@@ -92,14 +86,6 @@ class PartialDateTime extends FieldItemBase {
           'type' => 'float',
           'size' => 'big',
           'description' => 'The calculated timestamp for a date stored in UTC as a float for unlimited date range support.',
-          'not null' => TRUE,
-          'default' => 0,
-          'sortable' => TRUE,
-        ),
-        'timestamp_to' => array(
-          'type' => 'float',
-          'size' => 'big',
-          'description' => 'The calculated timestamp for end date stored in UTC as a float for unlimited date range support.',
           'not null' => TRUE,
           'default' => 0,
           'sortable' => TRUE,
@@ -129,7 +115,6 @@ class PartialDateTime extends FieldItemBase {
       ),
       'indexes' => array(
         'main' => array('timestamp'),
-        'by_end' => array('timestamp_to'),
       ),
     );
 
@@ -184,9 +169,6 @@ class PartialDateTime extends FieldItemBase {
       return TRUE;
     }
     if (!empty($value['timestamp'])) {
-      return FALSE;
-    }
-    if (!empty($value['timestamp_to'])) {
       return FALSE;
     }
     if (!empty($value['txt_short'])) {
