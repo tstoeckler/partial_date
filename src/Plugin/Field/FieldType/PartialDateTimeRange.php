@@ -9,13 +9,12 @@ use Drupal\Core\TypedData\MapDataDefinition;
 use Drupal\partial_date\Plugin\DataType\PartialDateTimeComputed;
 
 /**
- * Plugin implementation of the 'partial_date' field type.
+ * Plugin implementation of the 'partial_date_range' field type.
  *
  * @FieldType(
  *   id = "partial_date_range",
  *   label = @Translation("Partial date and time range"),
- *   description = @Translation("This field stores and renders partial dates."),
- *   module = "partial_date",
+ *   description = @Translation("This field stores and renders partial date ranges."),
  *   default_widget = "partial_date_widget",
  *   default_formatter = "partial_date_formatter",
  * )
