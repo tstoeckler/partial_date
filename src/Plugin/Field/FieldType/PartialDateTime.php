@@ -145,6 +145,24 @@ class PartialDateTime extends FieldItemBase {
     return $schema;
   }
 
+  /**
+   * {@inheritdoc}
+   */
+  public function getConstraints() {
+    $constraint_manager = $this->getTypedDataManager()->getValidationConstraintManager();
+    $constraints = parent::getConstraints();
+
+    $constraints[] = $constraint_manager->create('ComplexData', [
+      'year' => [
+        'Range' => [
+          'min' => PD2_YEAR_MIN,
+          'max' => PD2_YEAR_MAX,
+        ],
+      ],
+    ]);
+
+    return $constraints;
+  }
 
   protected function deleteConfig($configName) {
     //$config = \Drupal::service('config.factory')->getEditable($configName);
