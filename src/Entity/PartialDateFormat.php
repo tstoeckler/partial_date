@@ -16,8 +16,11 @@ use Drupal\partial_date\Entity\PartialDateFormatInterface;
  *     "form" = {
  *        "add" = "Drupal\partial_date\Form\PartialDateFormatEditForm",
  *        "edit" = "Drupal\partial_date\Form\PartialDateFormatEditForm",
- *        "delete" = "Drupal\partial_date\Form\PartialDateFormatDeleteForm",
- *     }
+ *        "delete" = "Drupal\Core\Entity\EntityDeleteForm",
+ *     },
+ *     "route_provider" = {
+ *       "html" = "Drupal\Core\Entity\Routing\DefaultHtmlRouteProvider",
+ *     },
  *   },
  *   config_prefix = "format",
  *   admin_permission = "administer site configuration",
@@ -26,8 +29,10 @@ use Drupal\partial_date\Entity\PartialDateFormatInterface;
  *     "label" = "label",
  *   },
  *   links = {
- *     "edit-form" = "/admin/config/regional/date-time/partial-date-format/{format}",
- *     "delete-form" = "/admin/config/regional/date-time/partial-date-format/{format}/delete",
+ *     "collection" = "/admin/config/regional/partial-date-format",
+ *     "add-form" = "/admin/config/regional/partial-date-format/add",
+ *     "edit-form" = "/admin/config/regional/partial-date-format/manage/{partial_date_format}",
+ *     "delete-form" = "/admin/config/regional/partial-date-format/manage/{partial_date_format}/delete",
  *   },
  * )
  *

@@ -1,36 +1,3 @@
-## YAML Template.
-entity.partial_date_format.list:
-    path: 'admin/config/regional/partial-date-formats'
-    defaults:
-        _entity_list: 'partial_date_format'
-        _title: 'Partial date formats'
-    requirements:
-        _permission: 'administer site configuration'
-
-entity.partial_date_format.add_form:
-    path: 'admin/config/regional/partial-date-format/add'
-    defaults:
-        _entity_form: 'partial_date_format.add'
-        _title: 'Add partial date format'
-    requirements:
-        _permission: 'administer site configuration'
-
-entity.partial_date_format.edit_form:
-    path: 'admin/config/regional/partial-date-format/{partial_date_format}'
-    defaults:
-        _entity_form: 'partial_date_format.edit'
-        _title: 'Edit partial date format'
-    requirements:
-        _permission: 'administer site configuration'
-
-entity.partial_date_format.delete_form:
-    path: 'admin/config/regional/partial-date-format/{partial_date_format}/delete'
-    defaults:
-        _entity_form: 'partial_date_format.delete'
-        _title: 'Delete partial date format'
-    requirements:
-        _permission: 'administer site configuration'
-
 partial_date_format.settings:
     path: 'admin/config/regional/partial-date-format/settings'
     defaults:
@@ -38,4 +5,3 @@ partial_date_format.settings:
         _title: 'Manage partial date settings'
     requirements:
         _permission: 'administer site configuration'
-
