@@ -26,16 +26,6 @@ use Drupal\partial_date\Entity\PartialDateFormat;
 class PartialDateTimeItem extends FieldItemBase {
 
   /**
-   * Cache for whether the host is a new revision.
-   *
-   * Set in preSave and used in update().  By the time update() is called
-   * isNewRevision() for the host is always FALSE.
-   *
-   * @var bool
-   */
-  protected $newHostRevision;
-
-  /**
    * {@inheritdoc}
    */
   public static function propertyDefinitions(FieldStorageDefinitionInterface $field_definition) {
