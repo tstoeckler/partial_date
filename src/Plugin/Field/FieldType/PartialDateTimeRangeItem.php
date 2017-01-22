@@ -19,7 +19,7 @@ use Drupal\partial_date\Plugin\DataType\PartialDateTimeComputed;
  *   default_formatter = "partial_date_formatter",
  * )
  */
-class PartialDateTimeRange extends PartialDateTime {
+class PartialDateTimeRangeItem extends PartialDateTimeItem {
 
   /**
    * {@inheritdoc}

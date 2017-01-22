@@ -23,7 +23,7 @@ use Drupal\partial_date\Entity\PartialDateFormat;
  *   default_formatter = "partial_date_formatter",
  * )
  */
-class PartialDateTime extends FieldItemBase {
+class PartialDateTimeItem extends FieldItemBase {
 
   /**
    * Cache for whether the host is a new revision.
@@ -62,7 +62,7 @@ class PartialDateTime extends FieldItemBase {
       }
     }
 
-    /** @see \Drupal\partial_date\Plugin\Field\FieldType\PartialDateTime::setValue() */
+    /** @see \Drupal\partial_date\Plugin\Field\FieldType\PartialDateTimeItem::setValue() */
     $properties['check_approximate'] = DataDefinition::create('boolean')
       ->setLabel(t('Check approximate'))
       ->setComputed(TRUE);
