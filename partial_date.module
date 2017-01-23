@@ -433,7 +433,7 @@ function partial_date_mktime(array $components) {
     // Calculate the average number of seconds in a year.
     $seconds_in_year = ($year - 1970) * DateTools::SECONDS_PER_YEAR;
 
-    $leapyear = partial_date_is_leap_year($year);
+    $leapyear = DateTools::isLeapYear($year);
     for ($mcount = 0; $mcount < ($month - 1); $mcount++) {
       $date += $_monthTable[$mcount];
       if (($leapyear === true) and ($mcount == 1)) {
@@ -448,7 +448,7 @@ function partial_date_mktime(array $components) {
     // go through leapyears
     // add months from latest given year
     for ($count = 1970; $count <= $year; $count++) {
-      $leapyear = partial_date_is_leap_year($count);
+      $leapyear = DateTools::isLeapYear($count);
       if ($count < $year) {
         $date += 365;
         if ($leapyear === true) {
@@ -473,7 +473,7 @@ function partial_date_mktime(array $components) {
     // go through leapyears
     // add months from latest given year
     for ($count = 1969; $count >= $year; $count--) {
-      $leapyear = partial_date_is_leap_year($count);
+      $leapyear = DateTools::isLeapYear($count);
       if ($count > $year) {
         $date += 365;
         if ($leapyear === true) {
