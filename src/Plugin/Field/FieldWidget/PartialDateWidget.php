@@ -202,10 +202,11 @@ class PartialDateWidget extends WidgetBase {
       '#attached' => array('library' => array('partial_date/estimates')),
     );
     $element['prefix'] = array('#plain_text' => $help_txt['estimates_prefix']);
+    $components = partial_date_components();
     foreach ($estimates as $key => $value) {
       if (!empty($value) && !empty($options[$key])) {
         $has_content = TRUE;
-        $estimate_label = t('@component estimate', array('@component' => componentLabel($key)));
+        $estimate_label = t('@component estimate', array('@component' => $components[$key]));
         $blank_option = array('' => $estimate_label);
         $element[$key . '_estimate'] = array(
           '#type' => 'select',

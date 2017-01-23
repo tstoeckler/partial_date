@@ -203,10 +203,6 @@ function partial_date_components(array $excluded_components = NULL) {
   return $components;
 }
 
-function componentLabel($key) {
-  return partial_date_components()[$key];
-}
-
 /**
  * Simpler version of the above with keys only (no labels).
  */
