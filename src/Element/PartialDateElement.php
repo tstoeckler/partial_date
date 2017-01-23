@@ -21,12 +21,11 @@ class PartialDateElement extends FormElement {
     return [
       '#input' => TRUE,
       '#process' => [[get_class($this), 'process']],
-      '#element_validate' => [[get_class($this), 'validate']], //array('partial_date_element_validate'),
-//      '#theme' => 'partial_date_element',
+      '#element_validate' => [[get_class($this), 'validate']],
       '#theme_wrappers' => array(
         'container' => array(
           '#attributes' => array(
-            'class' => array('partial-date-element', 'clearfix'),
+            'class' => array('partial-date-element', 'clearfix', 'container-inline'),
           ),
         ),
         'form_element',

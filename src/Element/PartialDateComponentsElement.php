@@ -21,8 +21,14 @@ class PartialDateComponentsElement extends FormElement {
       '#input' => TRUE,
       '#process' => [[get_class($this), 'process']],
       '#element_validate' => [[get_class($this), 'validate']], //array('partial_date_element_validate'),
-      '#theme' => 'partial_date_components_element',
-      '#theme_wrappers' => array('form_element'),
+      '#theme_wrappers' => array(
+        'container' => array(
+          '#attributes' => array(
+            'class' => array('partial-date-element', 'clearfix', 'container-inline'),
+          ),
+        ),
+        'form_element',
+      ),
       '#options' => partial_date_components(['timezone']),
       '#show_time' => TRUE,
       '#time_states' => FALSE,

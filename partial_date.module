@@ -36,95 +36,10 @@ function partial_date_help($route_name, RouteMatchInterface $route_match) {
  */
 function partial_date_theme() {
   return array(
-    'partial_date_element' => array(
-      'render element' => 'element',
-    ),
-    'partial_date_components_element' => array(
-      'render element' => 'element',
-    ),
-//    'partial_date_range_inline_element' => array(
-//      'render element' => 'element',
-//      'file' => 'partial_date.theme.inc',
-//    ),
-//    'partial_date' => array(
-//      'variables' => array('item' => NULL, 'format' => 'short', 'settings' => array()),
-//    ),
-//    'partial_date_range' => array(
-//      'variables' => array('from' => NULL, 'to' => NULL, 'settings' => array()),
-//    ),
-//    'partial_date_format_settings_form' => array(
-//      'render element' => 'form',
-//      'file' => 'partial_date.pages.inc',
-//    ),
-//    'partial_date_inline_form_element' => array(
-//      'render element' => 'element',
-//      'file' => 'partial_date.theme.inc',
-//    ),
     'checkbox_with_options' => array(
       'render element' => 'element',
     ),
   );
-}
-
-
-/**
- * The theme wrapper for a single date component.
- * todo: floating support.
- */
-//function theme_partial_date_element($variables) {
-//  $element = $variables['element'];
-//  return '<div class="partial-date-element clearfix">' . drupal_render_children($element) . '</div>';
-//}
-//
-//function theme_partial_date_range($variables) {
-//  $to = $variables['to'];
-//  $from = $variables['from'];
-//  $settings = $variables['settings'];
-//  $separator = '';
-////TODO "read range separator from partial_date.format.???.separators.range:"
-////  if (!empty($settings['component_settings'])
-////    && !empty($settings['component_settings']['separator'])
-////    && !empty($settings['component_settings']['separator']['range'])) {
-////    $separator = $settings['component_settings']['separator']['range'];
-////  }
-//  if (!strlen($separator)) {
-//    $separator = t(' to ', array(), array('context' => 'datetime'));
-//  }
-//  return t('@from@separator@to', array('@from' => $from, '@to' => $to, '@separator' => $separator));
-//}
-
-/**
- * TODO
- *
- * Template preprocess function to add theme suggestions for the various
- * partial date format types.
- */
-
-/**
- * The partial date theme callback.
- *
- * Allows easy override of the format if required.
- */
-function theme_partial_date($variables) {
-  $item = $variables['item'];
-  $settings = $variables['settings'];
-  $settings['format'] = $variables['format'];
-  $settings['is_approximate'] = !empty($variables['is_approximate']);
-  return partial_date_format($item, $settings);
-}
-
-function partial_date_reduce_range_values(&$from, &$to) {
-  // Reduce dates on granularity values.
-  foreach (array_keys(partial_date_components()) as $key) {
-    // Excat match as we need to compare '' to 0.
-    if (!isset($from[$key]) && !isset($to[$key])) {
-      continue;
-    }
-    elseif ((isset($from[$key]) || !isset($to[$key])) || $from[$key] !== $to[$key]) {
-      break;
-    }
-    $from[$key] = NULL;
-  }
 }
 
 /**
@@ -180,8 +95,6 @@ function partial_date_component_keys() {
  *   The timezone handling options that needs enforcing.
  */
 function partial_date_timezone_handling_correlation($timezone = '', $tz_handling = 'none') {
-  $user = \Drupal::currentUser();
-
   // Override or return unchanged depending on the set action.
   switch ($tz_handling) {
     case 'utc':
@@ -236,7 +149,7 @@ function partial_date_granularity_field_options($type, $options = array(), $incr
       return $options + array_combine(range(1, 31), range(1, 31));
 
     case 'month':
-      return $options + \Drupal\partial_date\DateTools::monthNames();
+      return $options + DateTools::monthNames();
 
     case 'timezone':
       // Ref: Date API module
@@ -312,136 +225,6 @@ function partial_date_float(array $c) {
       . sprintf('%02s', $c['minute']) // 0 or 1-60
       . sprintf('%02s', $c['second']); // 0 or 1-60
   return ((float) ltrim($date, '0')) * ($c['year'] >= 0 ? 1.0 : -1.0);
-}
-
-/**
- * Creates a timestamp based on the available components.
- *
- * Copied from Zend_Date. Significantly modified.
- *
- * @param array $components
- *   An array of all the defined date components including timezone.
- *
- * @return  integer|float
- *   An approx. timestamp (number of seconds elapsed relative to 1970/01/01 00:00:00 GMT/UTC)
- */
-function partial_date_mktime(array $components) {
-  $components = array_intersect_key($components, partial_date_components());
-  extract($components, EXTR_SKIP);
-
-  if ((1901 < $year) and ($year < 2038)) {
-    $oldzone = @date_default_timezone_get();
-    if ($timezone && ($timezone != $oldzone)) {
-      date_default_timezone_set($timezone);
-    }
-    $result = @mktime($hour, $minute, $second, $month, $day, $year);
-    if ($timezone && ($timezone != $oldzone)) {
-      date_default_timezone_set($oldzone);
-    }
-    if ($result !== FALSE) {
-      return $result;
-    }
-  }
-
-        // Get approx. offset
-# Error in float pre 1900 probably makes this pointless
-#        if ($gmt !== true) {
-#          $tz = new DateTimeZone($timezone);
-#          $second += $tz->getOffset(date_create('2000-01-01 00:00 GMT'));
-#        }
-
-  // date to integer
-  $day   = intval($day);
-  $month = intval($month);
-  $year  = intval($year);
-  $_monthTable = Drupal\partial_date\DateTools::monthMatrix($year);
-
-  if ($month > 12) {
-    $overlap = floor($month / 12);
-    $year   += $overlap;
-    $month  -= $overlap * 12;
-  }
-  else {
-    $overlap = ceil((1 - $month) / 12);
-    $year   -= $overlap;
-    $month  += $overlap * 12;
-  }
-
-  $date = 0;
-  // correct months > 12 and months < 1
-  if ($year < -99999 || $year > 99999) {
-    // Calculate the average number of seconds in a year.
-    $seconds_in_year = ($year - 1970) * DateTools::SECONDS_PER_YEAR;
-
-    $leapyear = DateTools::isLeapYear($year);
-    for ($mcount = 0; $mcount < ($month - 1); $mcount++) {
-      $date += $_monthTable[$mcount];
-      if (($leapyear === true) and ($mcount == 1)) {
-          $date++;
-      }
-    }
-    $date += $day - 1;
-    $date = (($date * 86400) + ($hour * 3600) + ($minute * 60) + $second + $seconds_in_year);
-  }
-  elseif ($year >= 1970) {
-    // Date is after UNIX epoch
-    // go through leapyears
-    // add months from latest given year
-    for ($count = 1970; $count <= $year; $count++) {
-      $leapyear = DateTools::isLeapYear($count);
-      if ($count < $year) {
-        $date += 365;
-        if ($leapyear === true) {
-            $date++;
-        }
-      }
-      else {
-        for ($mcount = 0; $mcount < ($month - 1); $mcount++) {
-          $date += $_monthTable[$mcount];
-          if (($leapyear === true) and ($mcount == 1)) {
-              $date++;
-          }
-        }
-      }
-    }
-
-    $date += $day - 1;
-    $date = (($date * 86400) + ($hour * 3600) + ($minute * 60) + $second);
-  }
-  else {
-    // Date is before UNIX epoch
-    // go through leapyears
-    // add months from latest given year
-    for ($count = 1969; $count >= $year; $count--) {
-      $leapyear = DateTools::isLeapYear($count);
-      if ($count > $year) {
-        $date += 365;
-        if ($leapyear === true) {
-          $date++;
-        }
-      }
-      else {
-        for ($mcount = 11; $mcount > ($month - 1); $mcount--) {
-          $date += $_monthTable[$mcount];
-          if (($leapyear === true) and ($mcount == 2)) {
-            $date++;
-          }
-        }
-      }
-    }
-
-    $date += ($_monthTable[$month - 1] - $day);
-    $date = -(($date * 86400) + (86400 - (($hour * 3600) + ($minute * 60) + $second)));
-
-    // gregorian correction for 5.Oct.1582
-    if ($date < -12220185600) {
-        $date += 864000;
-    }
-    elseif ($date < -12219321600) {
-        $date  = -12219321600;
-    }
-  }
-  return $date;
 }
 
 /**
