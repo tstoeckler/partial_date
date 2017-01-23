@@ -133,7 +133,7 @@ class PartialDateFormat extends ConfigEntityBase implements PartialDateFormatInt
      */
     public function getComponents() {
       $components = $this->get('components');
-      uasort($component, [SortArray::class, 'sortByWeightElement']);
+      uasort($components, [SortArray::class, 'sortByWeightElement']);
       return $components;
     }
 
