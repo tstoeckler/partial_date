@@ -260,13 +260,6 @@ class PartialDateTimeItem extends FieldItemBase {
       '#default_value' => !empty($settings['has_time']),
       '#description' => t('Clear if not interested in holding time. Check to make time controls available.'),
     );
-    $elements['has_range'] = array(
-      '#type' => 'checkbox',
-      '#id' => 'has_range',
-      '#title' => t('Allow range specification'),
-      '#default_value' => !empty($settings['has_range']),
-      '#description' => t('Clear if not holding end values. Check to explicitely show end of range values.'),
-    );
     $elements['require_consistency'] = array(
       '#type' => 'checkbox',
       '#title' => t('Require consistent values'),
