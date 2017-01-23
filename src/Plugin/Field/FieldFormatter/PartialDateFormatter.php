@@ -5,6 +5,7 @@ namespace Drupal\partial_date\Plugin\Field\FieldFormatter;
 use Drupal\Component\Utility\SortArray;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Field\FieldDefinitionInterface;
+use Drupal\Core\Field\FieldItemListInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Field\FormatterBase;
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
@@ -172,8 +173,7 @@ class PartialDateFormatter extends FormatterBase implements ContainerFactoryPlug
    * This handles any text override options before passing the values onto the
    * partial_date_render() or partial_date_render_range().
    */
-  public function viewElements(\Drupal\Core\Field\FieldItemListInterface $items, $langcode) {
-    $settings = $this->getSettings();
+  public function viewElements(FieldItemListInterface $items, $langcode) {
 //    $field = $this->getFieldSettings();
 //    $has_to_date = strpos($field['type'], 'range');
 //    $has_date = strpos($field['type'], 'date');
@@ -208,7 +208,6 @@ class PartialDateFormatter extends FormatterBase implements ContainerFactoryPlug
 //          $to = $this->partial_date_field_widget_reduce_date_components($item['to'], FALSE);
 //        }
 
-        $markup = '';
         if ($to && $from) {
           $sep = $format->separator['range'];
           $markup = $from . ' ' . $sep . ' ' . $to;
@@ -452,7 +451,7 @@ class PartialDateFormatter extends FormatterBase implements ContainerFactoryPlug
    * Helper function to assign the correct components into an array that the
    * formatters can use.
    */
-  function partial_date_field_widget_reduce_date_components($item, $is_start = TRUE, $is_approx = FALSE) {
+  function partial_date_field_widget_reduce_date_components($item, $is_start = TRUE) {
     if (empty($item)) {
       return FALSE;
     }
@@ -523,7 +522,7 @@ class PartialDateFormatter extends FormatterBase implements ContainerFactoryPlug
         );
       }
     }
-    catch (Exception $e) {}
+    catch (\Exception $e) {}
 
     return FALSE;
   }
