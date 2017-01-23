@@ -1,4 +1,4 @@
-<?php 
+<?php
 
 namespace Drupal\partial_date\Plugin\Field\FieldWidget;
 
@@ -7,7 +7,7 @@ use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
 
 /**
- * Provides an widget for Partial Date fields.
+ * Provides an widget for Partial Date Range fields.
  *
  * @FieldWidget(
  *   id = "partial_date_range_widget",
@@ -130,8 +130,8 @@ class PartialDateRangeWidget extends PartialDateWidget {
     ];
     return $settings + array(
       'estimates' => array(
-        'year' => 1,
-        'month' => 1,
+        'year' => TRUE,
+        'month' => TRUE,
       ),
       'range_inline' => TRUE,
     );

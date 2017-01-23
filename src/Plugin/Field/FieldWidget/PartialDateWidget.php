@@ -140,10 +140,9 @@ class PartialDateWidget extends WidgetBase implements ContainerFactoryPluginInte
   public static function defaultSettings() {
     $components = array_fill_keys(partial_date_component_keys(), 1);
     return array(
-      'txt_short' => 0,
-      'txt_long' => 0,
-      'has_time' => 1,
-      'has_range' => 1,
+      'txt_short' => FALSE,
+      'txt_long' => FALSE,
+      'has_time' => TRUE,
       'year_estimates_values' => '',
       'tz_handling' => 'none',
       'components' => $components,

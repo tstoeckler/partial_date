@@ -3,19 +3,19 @@
 namespace Drupal\partial_date\Plugin\Field\FieldWidget;
 
 /**
- * Provides a widget for Partial Date fields without time input.
+ * Provides a widget for Partial Date Range fields without time input.
  *
- * @see \Drupal\partial_date\Plugin\Field\FieldWidget\PartialDateRangeNoTimeWidget
+ * @see \Drupal\partial_date\Plugin\Field\FieldWidget\PartialDateNoTimeWidget
  *
  * @FieldWidget(
- *   id = "partial_date_only_widget",
- *   label = @Translation("Partial date only"),
+ *   id = "partial_date_range_only_widget",
+ *   label = @Translation("Partial date range only"),
  *   field_types = {
- *     "partial_date",
+ *     "partial_date_range",
  *   },
  * )
  */
-class PartialDateNoTimeWidget extends PartialDateWidget {
+class PartialDateRangeNoTimeWidget extends PartialDateRangeWidget {
 
   public static function defaultSettings() {
     $components = array_fill_keys(partial_date_component_keys(), 1);
@@ -23,6 +23,7 @@ class PartialDateNoTimeWidget extends PartialDateWidget {
     return array(
       'has_time' => FALSE,
       'components' => $components,
+      'components_to' => $components,
     ) + parent::defaultSettings();
   }
 
