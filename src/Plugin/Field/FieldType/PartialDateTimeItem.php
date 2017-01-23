@@ -17,7 +17,6 @@ use Drupal\partial_date\Plugin\DataType\PartialDateTimeComputed;
  *   id = "partial_date",
  *   label = @Translation("Partial date and time"),
  *   description = @Translation("This field stores and renders partial dates."),
- *   module = "partial_date",
  *   default_widget = "partial_date_widget",
  *   default_formatter = "partial_date_formatter",
  * )
