@@ -66,7 +66,7 @@ class PartialDateFormatter extends FormatterBase implements ContainerFactoryPlug
    */
   public function __construct($plugin_id, $plugin_definition, FieldDefinitionInterface $field_definition, array $settings, $label, $view_mode, array $third_party_settings, EntityTypeManagerInterface $entity_type_manager, PartialDateFormatterInterface $date_formatter) {
     parent::__construct($plugin_id, $plugin_definition, $field_definition, $settings, $label, $view_mode, $third_party_settings);
-    $this->partialDateFormatStorage = $entity_type_manager->getStorage('partial_date');
+    $this->partialDateFormatStorage = $entity_type_manager->getStorage('partial_date_format');
     $this->dateFormatter = $date_formatter;
   }
 
