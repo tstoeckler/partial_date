@@ -36,6 +36,21 @@ function partial_date_help($route_name, RouteMatchInterface $route_match) {
  */
 function partial_date_theme() {
   return array(
+    'partial_date' => [
+      'variables' => [
+        'date' => [],
+        'format' => NULL,
+      ],
+      'file' => 'partial_date.theme.inc',
+    ],
+    'partial_date_range' => [
+      'variables' => [
+        'from' => [],
+        'to' => [],
+        'format' => NULL,
+      ],
+      'file' => 'partial_date.theme.inc',
+    ],
     'checkbox_with_options' => array(
       'render element' => 'element',
     ),

@@ -169,11 +169,7 @@ class PartialDateFormatter extends FormatterBase implements ContainerFactoryPlug
    * {@inheritdoc}
    */
   public function viewElements(FieldItemListInterface $items, $langcode) {
-//    $field = $this->getFieldSettings();
-//    $has_to_date = strpos($field['type'], 'range');
-//    $has_date = strpos($field['type'], 'date');
-//    $has_time = strpos($field['type'], 'time');
-    $element = array();
+    $element = [];
     foreach ($items as $delta => $item) {
       $override = $this->getTextOverride($item);
       if ($override) {
@@ -185,23 +181,32 @@ class PartialDateFormatter extends FormatterBase implements ContainerFactoryPlug
         if ($this->getSetting('range_reduce')) {
           $this->reduceRange($from, $to);
         }
-        $formatted_from = $this->formatItem($from);
-        $formatted_to = $this->formatItem($to);
 
-        if ($formatted_from && $to) {
-          $separator = $this->getFormat()->getSeparator('range');
-          $markup = $formatted_from . ' ' . $separator . ' ' . $formatted_to;
+        if ($from && $to) {
+          $element[$delta] = [
+            '#theme' => 'partial_date_range',
+            '#from' => $from,
+            '#to' => $to,
+            '#format' => $this->getFormat(),
+          ];
         }
-        elseif ($formatted_from) {
-          $markup = $formatted_from;
+        elseif ($from) {
+          $element[$delta] = [
+            '#theme' => 'partial_date',
+            '#date' => $from,
+            '#format' => $this->getFormat(),
+          ];
         }
-        elseif ($formatted_to) {
-          $markup = $formatted_to;
+        elseif ($to) {
+          $element[$delta] = [
+            '#theme' => 'partial_date',
+            '#date' => $from,
+            '#format' => $this->getFormat(),
+          ];
         }
         else {
-          $markup = 'N/A';
+          $element[$delta] = ['#markup' => $this->t('N/A')];
         }
-        $element[$delta] = array('#markup' => $markup);
       }
     }
     return $element;
@@ -349,225 +354,5 @@ class PartialDateFormatter extends FormatterBase implements ContainerFactoryPlug
 
     return FALSE;
   }
-
-  public function formatItem(array $date) {
-    $format = $this->getFormat();
-    $components = $format->getComponents();
-
-    $valid_components = partial_date_components();
-    $last_type = FALSE;
-    foreach ($components as $type => $component) {
-      $markup = '';
-
-      $separator = '';
-      if ($last_type) {
-        $separator_type = _partial_date_component_separator_type($last_type, $type);
-        $separator = $format->getSeparator($separator_type);
-      }
-
-      if (isset($valid_components[$type])) {
-        $display_type = $format->getDisplay($type);
-        $estimate = empty($date[$type . '_estimate']) ? FALSE : $date[$type . '_estimate'];
-        // If no estimate, switch to the date only formating option.
-        if (!$estimate && ($display_type == 'date_or' || strpos($display_type, 'estimate_') === 0)) {
-          $display_type = 'date_only';
-        }
-
-        switch ($display_type) {
-          case 'none':
-            // We need to avoid adding an empty option.
-            continue;
-
-          case 'date_only':
-          case 'date_or':
-            $markup = $this->formatComponent($type, $date);
-            break;
-
-          case 'estimate_label':
-            $markup = $date[$type . '_estimate_label'];
-            // We no longer have a date / time like value.
-            $type = 'other';
-            break;
-
-          case 'estimate_range':
-            list($estimate_start, $estimate_end) = explode('|', $date[$type . '_estimate']);
-            $start = $this->formatComponent($type, [$type => $estimate_start] + $date);
-            $end = $this->formatComponent($type, [$type => $estimate_end]);
-            if (strlen($start) && strlen($end)) {
-              $markup = t('@estimate_start to @estimate_end', array('@estimate_start' => $estimate_start, '@estimate_end' => $estimate_end));
-            }
-            elseif (strlen($estimate_start)) {
-              $markup = $estimate_start;
-            }
-            elseif (strlen($estimate_end)) {
-              $markup = $estimate_end;
-            }
-            break;
-
-          case 'estimate_component':
-            $markup = $this->formatComponent($type, [$type => $date[$type . '_estimate_value']] + $date);
-            break;
-        }
-
-        if (!strlen($markup)) {
-          if (isset($component['empty']) && strlen($component['empty'])) {
-            // What do we get? If numeric, assume a date / time component, otherwise
-            // we can assume that we no longer have a date / time like value.
-            $markup = $component['empty'];
-            if (!is_numeric($markup)) {
-              $type = 'other';
-            }
-          }
-        }
-        if (strlen($markup)) {
-          if ($separator) {
-            $components[] = $separator;
-          }
-          $components[] = $markup;
-          $last_type = $type;
-        }
-      }
-      elseif (isset($component['value']) && strlen($component['value'])) {
-        if ($separator) {
-          $components[] = $separator;
-        }
-        $components[] = $component['value'];
-        $last_type = $type;
-      }
-
-    }
-    return implode('', $components);
-  }
-
-  //function formatComponent($value, $format, &$date, $additional = array()) {
-  protected function formatComponent($key, $date) {
-    $value = isset($date[$key]) && strlen($date[$key]) ? $date[$key] : FALSE;
-    if (!$value) {
-      return ''; //if component value is missing, return an empty string.
-    }
-    $format = $this->getFormat();
-    $keyFormat = $format->getComponent($key)['format'];
-
-    // Hide year designation if no valid year.
-    $year_designation = $format->getYearDesignation();
-    if (empty($date['year'])) {
-      $year_designation = '';
-    }
-
-    // If dealing with 12 hour times, recalculate the value.
-    if ($keyFormat == 'h' || $keyFormat == 'g') {
-      if ($value > 12) {
-        $value -= 12;
-      }
-      elseif ($value == 0) {
-        $value = '12';
-      }
-    }
-    // Add suffixes for year and time formats
-    $suffix = '';
-    switch ($keyFormat) {
-      case 'd-S':
-      case 'j-S':
-        $suffix = '<sup>' . DateTools::ordinalSuffix($value) . '</sup>';
-        break;
-
-      case 'y-ce':
-      case 'Y-ce':
-        $suffix = partial_date_year_designation_decorator($value, $year_designation);
-        if (!empty($suffix) && !empty($value)) {
-          $value = abs($value);
-        }
-        break;
-    }
-
-    switch ($keyFormat) {
-      case 'y-ce':
-      case 'y':
-        return (strlen($value) > 2 ?  substr($value, - 2) : $value) . $suffix;
-
-      case 'F':
-        return DateTools::monthNames($value) . $suffix;
-
-      case 'M':
-        return DateTools::monthAbbreviations($value) . $suffix;
-
-      // Numeric representation of the day of the week  0 (for Sunday) through 6 (for Saturday)
-      case 'w':
-        if (!empty($date['year']) && !empty($date['month'])) {
-          return DateTools::dayOfWeek($date['year'], $date['month'], $value) . $suffix;
-        }
-        return '';
-
-      // A full textual representation of the day of the week.
-      case 'l':
-      // A textual representation of a day, three letters.
-      case 'D':
-        if (!empty($date['year']) && !empty($date['month'])) {
-          $day = DateTools::dayOfWeek($date['year'], $date['month'], $value);
-          if ($keyFormat == 'D') {
-            return DateTools::weekdayAbbreviations($day, 3) . $suffix;
-          } else {
-            return DateTools::weekdayNames($day) . $suffix;
-          }
-        }
-        return '';
-
-      case 'n':
-      case 'j':
-      case 'j-S':
-      case 'g':
-      case 'G':
-        return intval($value) . $suffix;
-
-      case 'd-S':
-      case 'd':
-      case 'h':
-      case 'H':
-      case 'i':
-      case 's':
-      case 'm':
-        return sprintf('%02s', $value) . $suffix;
-
-      case 'Y-ce':
-      case 'Y':
-      case 'e':
-        return $value . $suffix;
-
-      case 'T':
-        try {
-          $tz = new \DateTimeZone($value);
-          $transitions = $tz->getTransitions();
-          return $transitions[0]['abbr']  . $suffix;
-        }
-        catch (\Exception $e) {}
-        return '';
-
-
-      // Todo: implement
-      // Year types
-      // ISO-8601 year number
-      case 'o':
-
-      // Day types
-      // The day of the year
-      case 'z':
-      // ISO-8601 numeric representation of the day of the week
-      case 'N':
-
-      // Timezone offsets
-      // Whether or not the date is in daylight saving time
-      case 'I':
-      // Difference to Greenwich time (GMT) in hours
-      case 'O':
-      // Difference to Greenwich time (GMT) with colon between hours and minutes
-      case 'P':
-      // Timezone offset in seconds
-      case 'Z':
-
-      default:
-        return '';
-    }
-  }
-
 
 }
