@@ -127,58 +127,6 @@ function partial_date_reduce_range_values(&$from, &$to) {
   }
 }
 
-################################################################################
-#  ----------------------                                                      #
-#  API related functions:                                                      #
-#  ----------------------                                                      #
-#                                                                              #
-#  Note: It would be great to move these to the date_api.                      #
-#                                                                              #
-#  Main functions include:                                                     #
-#   * partial_date_components()                                                #
-#     Returns the date and time values used by the module.                     #
-#     This controls almost everything, from defining the schema to controlling #
-#     the output of the formatters.                                            #
-#                                                                              #
-#   * partial_date_day_ordinal_suffix()                                        #
-#      - moved to DateTools::ordinalSufix(int $day)                            #
-#                                                                              #
-#   * partial_date_granularity_field_options()                                 #
-#     Returns select options for various components.                           #
-#                                                                              #
-#   * partial_date_mktime()                                                    #
-#     Returns a timestamp (int / float) based on the available components.     #
-#                                                                              #
-#   * partial_date_timezone_handling_correlation()                             #
-#     Forces a given timezone into the specified timezone handling option.     #
-#                                                                              #
-#   * partial_date_timezone_option_is_selectable()                             #
-#     Determines if the timezone component should be rendered.                 #
-#                                                                              #
-#   * partial_date_timezone_handling_options()                                 #
-#     Returns an option list of supported timezone handling options.           #
-#                                                                              #
-#   * partial_date_year_designation_decorator()                                #
-#     Returns the year with the appropriative designation added.               #
-#                                                                              #
-#   * partial_date_year_designation_options()                                  #
-#     Returns an option list of supported year designations.                   #
-#                                                                              #
-#                                                                              #
-#==============================================================================#
-#     Moved to DateTools:                                                      #
-#                                                                              #
-#   * partial_date_is_leap_year()         => DateTools::isLeapYear($year)      #
-#     Checks to see if the specified year is a leap year.                      #
-#                                                                              #                                                                              #
-#   * partial_date_month_abbreviations()  => DateTools::monthAbbreviations()   #
-#     Returns an option list of month abbreviations.                           #
-#                                                                              #
-#   * partial_date_month_matrix()         => DateTools::monthMatrix()          #
-#     Returns the valid month lengths based of the specified year.             #
-#                                                                              #
-################################################################################
-
 /**
  * These are the core components that always exist, but are shown or hidden
  * depending on the selected field settings.
