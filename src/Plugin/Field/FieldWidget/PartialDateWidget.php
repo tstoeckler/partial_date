@@ -11,6 +11,7 @@ use Drupal\Core\Field\WidgetBase;
 use Drupal\Core\Field\FieldItemListInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Language\LanguageInterface;
+use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Symfony\Component\Validator\ConstraintViolationInterface;
 use Drupal\partial_date\DateTools;
 
@@ -364,7 +365,7 @@ class PartialDateWidget extends WidgetBase {
       );
     }
     if ($this->allowTime) {
-      $tz_options = partial_date_timezone_handling_options();
+      $tz_options = $this->getTimezoneOptions();
       $elements['tz_handling'] = array(
         '#type' => 'select',
         '#title' => t('Time zone handling'),
@@ -483,7 +484,6 @@ class PartialDateWidget extends WidgetBase {
   
   public function settingsSummary() {
     $summary = array();
-//    $fieldSettings = $this->getFieldSettings();
     $has_range = $this->hasRange();
     $has_time  = $this->hasTime();
 
@@ -492,8 +492,7 @@ class PartialDateWidget extends WidgetBase {
       if ($timezone == 'none') {
         $summary[] = t('No timezone translations');
       } else {
-        $tz_options = partial_date_timezone_handling_options();
-        $summary[] = t('Timezone handling: ') . $tz_options[$timezone];
+        $summary[] = t('Timezone handling: ') . $this->getTimezoneOptions()[$timezone];
       }
     } elseif ($this->allowTime) {
       $summary[] = t('Date only');
@@ -671,6 +670,20 @@ function _partial_date_inline_float_css($component = TRUE) {
 }
 
 
-  
+  /**
+   * Returns an array of timezone handling options.
+   *
+   * @return array
+   *   An array of options for timezone handling.
+   */
+  protected function getTimezoneOptions() {
+    return array(
+      'none' => new TranslatableMarkup('No timezone conversion'),
+      'date' => new TranslatableMarkup('User selectable', array(), array('context' => 'datetime')),
+      'site' => new TranslatableMarkup("Site's timezone"),
+      'user' => new TranslatableMarkup("User's account timezone"),
+      'utc' => new TranslatableMarkup('UTC', array(), array('context' => 'datetime')),
+    );
+  }
  
 }

@@ -222,21 +222,6 @@ function partial_date_component_keys() {
 }
 
 /**
- * Returns a translated array of timezone handling options.
- *
- * Currently, this is a copy of the Dates module options.
- */
-function partial_date_timezone_handling_options() {
-  return array(
-    'none' => t('No timezone conversion'),
-    'date' => t('User selectable', array(), array('context' => 'datetime')),
-    'site' => t("Site's timezone"),
-    'user' => t("User's account timezone"),
-    'utc' => t('UTC', array(), array('context' => 'datetime')),
-  );
-}
-
-/**
  * Helper function to control how and if the timezone component should be
  * rendered.
  */
