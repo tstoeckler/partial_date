@@ -213,19 +213,6 @@ class PartialDateTimeItem extends FieldItemBase {
     $this->data = $data;
   }
 
-  protected function deleteConfig($configName) {
-    $config = \Drupal::configFactory()->getEditable($configName);
-    if (isset($config)) {
-      $config->delete();
-    }
-  }
-
-  public function delete() {
-    $this->deleteConfig('partial_date.settings');
-    $this->deleteConfig('partial_date.format');
-    parent::delete();
-  }
-
   /**
    * {@inheritdoc}
    */
