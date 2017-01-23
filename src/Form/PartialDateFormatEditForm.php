@@ -5,10 +5,6 @@ namespace Drupal\partial_date\Form;
 use Drupal\Core\Entity\EntityForm;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\partial_date\Entity\PartialDateFormatInterface;
-use Drupal\Core\Entity\Query\QueryFactory;
-use Symfony\Component\DependencyInjection\ContainerInterface;
-use Drupal\Component\Utility\SortArray;
-use Drupal\partial_date\Entity\PartialDateFormat;
 
 /**
  * Description of FormatTypeEditForm
@@ -93,7 +89,7 @@ class PartialDateFormatEditForm extends EntityForm {
         '#type' => 'select',
         '#title' => t('Display source for %label', array('%label' => $label)),
         '#options' => $this->partial_date_estimate_handling_options(),
-        '#default_value' => $format->display[$key],
+        '#default_value' => $format->getDisplay($key),
         '#required' => TRUE,
       );
     }
@@ -167,7 +163,7 @@ class PartialDateFormatEditForm extends EntityForm {
     );
 
     // Build the table rows and columns.
-    foreach ($format->components as $key => $component) {
+    foreach ($format->getComponents() as $key => $component) {
       $label = $components[$key];
       $table[$key]['#attributes']['class'][] = 'draggable';
       $table[$key]['#weight'] = $component['weight'];
