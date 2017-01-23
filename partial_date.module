@@ -562,23 +562,3 @@ function _partial_date_component_type($key) {
       return FALSE;
   }
 }
-
-
-function _partial_date_render_component($key, $item, $field, $format) {
-  switch ($field) {
-    case 'none':
-      return '';
-
-    case 'date_only':
-      return isset($item[$key]) ? $item[$key] : '';
-
-    case 'estimate_label':
-    case 'estimate_range': // Start (single or from dates) or End (to dates) of estimate range
-    case 'estimate_component': // Date component with fallback to estimate component
-    case 'date_or':
-
-    default:
-      return $field;
-  }
-}
-
