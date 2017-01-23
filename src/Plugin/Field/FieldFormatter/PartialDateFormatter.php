@@ -1,10 +1,5 @@
 <?php 
 
-/**
- * @file
- * Contains \Drupal\partial_date\Plugin\Field\FieldFormatter\PartialDateFormatter.
- */
-
 namespace Drupal\partial_date\Plugin\Field\FieldFormatter;
 
 use Drupal\Component\Utility\SortArray;
@@ -12,7 +7,6 @@ use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Field\FieldDefinitionInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Field\FormatterBase;
-use DateTime;
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Drupal\partial_date\DateTools;
@@ -20,7 +14,6 @@ use Drupal\partial_date\Entity\PartialDateFormat;
 
 /**
  * Plugin implementation for Partial Date formatter.
- * (Drupal 7): hook_field_formatter_info() => (Drupal 8): "FieldFormatter" annotation
  *
  * @FieldFormatter(
  *   id = "partial_date_formatter",
@@ -66,7 +59,6 @@ class PartialDateFormatter extends FormatterBase implements ContainerFactoryPlug
    * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
    *   The entity type manager.
    */
-
   public function __construct($plugin_id, $plugin_definition, FieldDefinitionInterface $field_definition, array $settings, $label, $view_mode, array $third_party_settings, EntityTypeManagerInterface $entity_type_manager) {
     parent::__construct($plugin_id, $plugin_definition, $field_definition, $settings, $label, $view_mode, $third_party_settings);
     $this->partialDateFormatStorage = $entity_type_manager->getStorage('partial_date');
@@ -189,7 +181,6 @@ class PartialDateFormatter extends FormatterBase implements ContainerFactoryPlug
     $element = array();
     $format  = $this->getCurrentFormat();
     foreach ($items as $delta => $item) {
-      //$item is the field (FieldType\PartialDateTime)
       $value = $item->getValue();
       if (!is_array($value)) {
         \Drupal::logger('partial_date')->warning('PartialDateFormatter.viewElements: Unexpected field value:' . serialize($value));
@@ -519,7 +510,7 @@ class PartialDateFormatter extends FormatterBase implements ContainerFactoryPlug
     }
     try {
       $tz = new \DateTimeZone($timezone);
-      $date = new DateTime('@' . $timestamp, $tz);
+      $date = new \DateTime('@' . $timestamp, $tz);
       if ($date) {
         return array(
           'year' => $date->format('Y'),
@@ -730,11 +721,11 @@ class PartialDateFormatter extends FormatterBase implements ContainerFactoryPlug
 
       case 'T':
         try {
-          $tz = new DateTimeZone($value);
+          $tz = new \DateTimeZone($value);
           $transitions = $tz->getTransitions();
           return $transitions[0]['abbr']  . $suffix;
         }
-        catch (Exception $e) {}
+        catch (\Exception $e) {}
         return '';
 
 
