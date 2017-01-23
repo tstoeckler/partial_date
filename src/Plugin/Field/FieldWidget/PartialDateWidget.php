@@ -499,11 +499,11 @@ class PartialDateWidget extends WidgetBase {
       $summary[] = t('Date only');
     }
 
-    $components = partial_date_components();
+    $exclude = [];
     if (!$has_time) {
-      remove_time_components($components);
-      //unset($components['hour'], $components['minute'], $components['second'], $components['timezone']);
+      $exclude = ['hour', 'minute', 'second', 'timezone'];
     }
+    $components = partial_date_components($exclude);
     $from_components = array_filter($this->settings['components']);
     if (!empty($from_components)) {
       $txt = t('Available components: ');
