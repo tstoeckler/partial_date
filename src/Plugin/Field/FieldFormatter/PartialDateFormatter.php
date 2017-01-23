@@ -7,6 +7,7 @@
 
 namespace Drupal\partial_date\Plugin\Field\FieldFormatter;
 
+use Drupal\Component\Utility\SortArray;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Field\FieldDefinitionInterface;
 use Drupal\Core\Form\FormStateInterface;
@@ -539,7 +540,7 @@ class PartialDateFormatter extends FormatterBase implements ContainerFactoryPlug
   public function formatItem($item) {
     $components = array();
     $format = $this->getCurrentFormat();
-    uasort($format->components, 'partial_date_sort');
+    uasort($format->components, [SortArray::class, 'sortByWeightElement']);
     // Enforce meridiem if we have a 12 hour format.
     if (isset($format->components['hour'])
         && ($format->components['hour'] == 'h' || $format->components['hour'] == 'g')) {

@@ -504,19 +504,6 @@ function partial_date_mktime(array $components) {
   return $date;
 }
 
-
-/**
- * Function used by uasort to sort structured arrays by weight.
- */
-function partial_date_sort($a, $b) {
-  $a_weight = (is_array($a) && isset($a['weight'])) ? $a['weight'] : 0;
-  $b_weight = (is_array($b) && isset($b['weight'])) ? $b['weight'] : 0;
-  if ($a_weight == $b_weight) {
-    return 0;
-  }
-  return ($a_weight < $b_weight) ? -1 : 1;
-}
-
 /**
  * Returns any configured separators for two components.
  */
