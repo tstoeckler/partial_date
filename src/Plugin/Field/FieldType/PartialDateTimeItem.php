@@ -89,13 +89,13 @@ class PartialDateTimeItem extends FieldItemBase {
           'type' => 'varchar',
           'length' => 100,
           'description' => 'A editable display field for this date for the short format.',
-          'not null' => FALSE,
+          'not null' => $minimum_components['txt_short'],
         ),
         'txt_long' => array(
           'type' => 'varchar',
           'length' => 255,
           'description' => 'A editable display field for this date for the long format.',
-          'not null' => FALSE,
+          'not null' => $minimum_components['txt_long'],
         ),
         'data' => array(
           'description' => 'The configuration data for the effect.',
