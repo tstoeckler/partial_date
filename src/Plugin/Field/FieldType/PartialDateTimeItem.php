@@ -70,14 +70,6 @@ class PartialDateTimeItem extends FieldItemBase {
 
   /**
    * {@inheritdoc}
-   * Equivalent of hook_field_schema().
-   *
-   * This module stores a dates in a string that represents the data that the user
-   * entered and a float timestamp that represents the best guess for the date.
-   *
-   * After tossing up the options a number of times, I've taken the conservative
-   * opinion of storing all date components separately rather than storing these
-   * in a singular field.
    */
   public static function schema(FieldStorageDefinitionInterface $field) {
     $minimum_components = $field->getSetting('minimum_components');
