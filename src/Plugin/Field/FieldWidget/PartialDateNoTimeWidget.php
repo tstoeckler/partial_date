@@ -28,15 +28,6 @@ use Drupal\partial_date\DateTools;
  */
 class PartialDateNoTimeWidget extends PartialDateWidget {
 
-  /**
-   * {@inheritdoc}
-   */
-  protected function initSettings(){
-    $this->settings = $this->getSettings();
-    $this->allowRange = $this->getFieldSetting('has_range'); //strpos($type, 'range');
-    $this->allowTime  = FALSE; 
-  }
-
   public static function defaultSettings() {
     $components = array_fill_keys(partial_date_component_keys(), 1);
     unset($components['hour'], $components['minute'], $components['second'], $components['timezone']);

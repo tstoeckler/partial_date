@@ -170,14 +170,6 @@ function partial_date_component_keys() {
 }
 
 /**
- * Helper function to control how and if the timezone component should be
- * rendered.
- */
-function partial_date_timezone_option_is_selectable($tz_handling) {
-  return ($tz_handling == 'none' || $tz_handling == 'date');
-}
-
-/**
  * Helper function to determine the correct timezone based on the timezone
  * handling options used.
  *
