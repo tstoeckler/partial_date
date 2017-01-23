@@ -4,7 +4,6 @@ namespace Drupal\partial_date\Element;
 
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Render\Element\FormElement;
-use Drupal\partial_date\DateTools;
 
 /**
  * Provides a form element for partial date widget.
@@ -49,32 +48,21 @@ class PartialDateComponentsElement extends FormElement {
     }
     return $element;
   }
- 
-  /**
-   * #element_validate callback.
-   * {@inheritdoc}
-   */
-  public static function validate(&$element, FormStateInterface $form_state, &$complete_form) {
-    
-//    foreach ($element['data'] as $key => $checkbox) {
-//      $element['#value'][$key] = $checkbox['#value'];
-//    }
-  }
-  
+
   public static function valueCallback(&$element, $input, FormStateInterface $form_state) {
     $result = array();
     if ($input === FALSE) {
       $element += array('#default_value' => array());
-      foreach ($element['#default_value'] as $key => $default) {
-        $result[$key] = $default;
-      }
-    } elseif (is_array($input)) {
+      $result = $element['#default_value'];
+    }
+    elseif (is_array($input)) {
       foreach ($input as $key => $value) {
         if (isset($value) && $value != 0) {
           $result[$key] = $value;
         }
       }
-    } elseif (isset($input)) {
+    }
+    elseif (isset($input)) {
       $result[$input] = $input;
     }
     return $result;
