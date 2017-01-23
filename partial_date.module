@@ -447,10 +447,7 @@ function partial_date_mktime(array $components) {
 /**
  * Returns any configured separators for two components.
  */
-function _partial_date_component_separator($a, $b, $separators = array()) {
-  if ($a === FALSE) {
-    return;
-  }
+function _partial_date_component_separator_type($a, $b) {
   $a_type = _partial_date_component_type($a);
   $b_type = _partial_date_component_type($b);
   if (!$a_type || !$b_type) {
@@ -462,7 +459,7 @@ function _partial_date_component_separator($a, $b, $separators = array()) {
   else {
     $key = 'datetime';
   }
-  return isset($separators[$key]) ? $separators[$key] : FALSE;
+  return $key;
 
 }
 /**
