@@ -82,6 +82,7 @@ class PartialDateFormatEditForm extends EntityForm {
     $elements = array(
       '#type' => 'details',
       '#title' => $this->t('Component display'),
+      '#tree' => TRUE,
     );
 
     foreach ($components as $key => $label) {
@@ -100,6 +101,7 @@ class PartialDateFormatEditForm extends EntityForm {
     $elements = array(
       '#type' => 'details',
       '#title' => $this->t('Component separators'),
+      '#tree' => TRUE,
     );
     $elements['date'] = array(
       '#type' => 'textfield',
