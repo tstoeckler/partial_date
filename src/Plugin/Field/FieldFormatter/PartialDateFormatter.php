@@ -1,4 +1,4 @@
-<?php 
+<?php
 
 namespace Drupal\partial_date\Plugin\Field\FieldFormatter;
 
@@ -8,9 +8,9 @@ use Drupal\Core\Field\FieldItemListInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Field\FormatterBase;
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
+use Drupal\partial_date\PartialDateFormatterInterface;
 use Drupal\partial_date\Plugin\Field\FieldType\PartialDateTimeItem;
 use Symfony\Component\DependencyInjection\ContainerInterface;
-use Drupal\partial_date\DateTools;
 
 /**
  * Plugin implementation for Partial Date formatter.
@@ -22,11 +22,7 @@ use Drupal\partial_date\DateTools;
  *   description = @Translation("Display partial date."),
  *   field_types = {"partial_date"},
  *   quickedit = {
- *     "editor" = "disabled"
- *   },
- *   settings = {
- *     "use_override" = "none",
- *     "format" = "short", 
+ *     "editor" = "disabled",
  *   },
  * )
  */
@@ -38,6 +34,13 @@ class PartialDateFormatter extends FormatterBase implements ContainerFactoryPlug
    * @var \Drupal\Core\Entity\EntityStorageInterface
    */
   protected $partialDateFormatStorage;
+
+  /**
+   * The partial date formatter.
+   *
+   * @var \Drupal\partial_date\PartialDateFormatterInterface
+   */
+  protected $dateFormatter;
 
   /**
    * Constructs a partial date formatter.
@@ -58,10 +61,13 @@ class PartialDateFormatter extends FormatterBase implements ContainerFactoryPlug
    *   Any third party settings.
    * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
    *   The entity type manager.
+   * @param \Drupal\partial_date\PartialDateFormatterInterface $date_formatter
+   *   The partial date formatter.
    */
-  public function __construct($plugin_id, $plugin_definition, FieldDefinitionInterface $field_definition, array $settings, $label, $view_mode, array $third_party_settings, EntityTypeManagerInterface $entity_type_manager) {
+  public function __construct($plugin_id, $plugin_definition, FieldDefinitionInterface $field_definition, array $settings, $label, $view_mode, array $third_party_settings, EntityTypeManagerInterface $entity_type_manager, PartialDateFormatterInterface $date_formatter) {
     parent::__construct($plugin_id, $plugin_definition, $field_definition, $settings, $label, $view_mode, $third_party_settings);
     $this->partialDateFormatStorage = $entity_type_manager->getStorage('partial_date');
+    $this->dateFormatter = $date_formatter;
   }
 
   /**
@@ -76,7 +82,8 @@ class PartialDateFormatter extends FormatterBase implements ContainerFactoryPlug
       $configuration['label'],
       $configuration['view_mode'],
       $configuration['third_party_settings'],
-      $container->get('entity_type.manager')
+      $container->get('entity_type.manager'),
+      $container->get('partial_date.formatter')
     );
   }
 
@@ -86,7 +93,6 @@ class PartialDateFormatter extends FormatterBase implements ContainerFactoryPlug
   public static function defaultSettings() {
     return array(
       'use_override' => 'none',
-      'range_reduce' => TRUE,
       'format' => 'short',
     ) + parent::defaultSettings();
   }
@@ -104,12 +110,6 @@ class PartialDateFormatter extends FormatterBase implements ContainerFactoryPlug
       '#options' => $this->overrideOptions(),
       '#checkbox_value' => 'none',
       '#description' => t('This setting allows date values to be replaced with user specified date descriptions, if applicable.'),
-    );
-    $elements['range_reduce'] = array(
-      '#type' => 'checkbox',
-      '#title' => t('Reduce common values from range display'),
-      '#default_value' => $this->getSetting('range_reduce'),
-      '#description' => t('This setting allows a simplified display for range values. For example "2015 Jan-Sep" instead of full specification "2015 Jan-2015 Sep"'),
     );
     $elements['format'] = array(
       '#title' => t('Partial date format'),
@@ -134,15 +134,16 @@ class PartialDateFormatter extends FormatterBase implements ContainerFactoryPlug
    */
   public function settingsSummary() {
     $summary = array();
+
     if ($this->getSetting('use_override') != 'none') {
       $overrides = $this->overrideOptions();
       $summary[] = t(' User text: ') . $overrides[$this->getSetting('use_override')];
     }
+
     $types   = $this->formatOptions();
-    $item    = $this->generateExampleDate();
-    $example = $this->formatItem($item);
-    $summary[] = array('#markup' => t('Format: ') . $types[$this->getSetting('format')]
-                        . ' - ' . $example);
+    $example = $this->dateFormatter->format($this->generateExampleDate(), $this->getFormat());
+    $summary[] = array('#markup' => t('Format: ') . $types[$this->getSetting('format')] . ' - ' . $example);
+
     return $summary;
   }
 
@@ -177,27 +178,7 @@ class PartialDateFormatter extends FormatterBase implements ContainerFactoryPlug
       }
       else {
         $from = $item->from;
-        $to = $item->to;
-        if ($this->getSetting('range_reduce')) {
-          $this->reduceRange($from, $to);
-        }
-
-        if ($from && $to) {
-          $element[$delta] = [
-            '#theme' => 'partial_date_range',
-            '#from' => $from,
-            '#to' => $to,
-            '#format' => $this->getFormat(),
-          ];
-        }
-        elseif ($from) {
-          $element[$delta] = [
-            '#theme' => 'partial_date',
-            '#date' => $from,
-            '#format' => $this->getFormat(),
-          ];
-        }
-        elseif ($to) {
+        if ($from) {
           $element[$delta] = [
             '#theme' => 'partial_date',
             '#date' => $from,
@@ -254,65 +235,6 @@ class PartialDateFormatter extends FormatterBase implements ContainerFactoryPlug
         break;
     }
     return $override;
-  }
-
-  /*
-   * Reduce identical range components to simplify the display.
-   * Format is needed to know which side should be cleared. The order in which
-   * year, month and day are displayed is important:
-   * Ex. 2015 Jun to 2015 Sep => 2015 Jun to Sep
-   * but Jun 2015 to Sep 2015 => Jun to Sep 2015
-   * Rules:
-   * 1. If all date correspondent components are equal, keep only left side and quit (no time compression)
-   * 2. If time components are present, stop further compression (mixed date & time compression is confusing).
-   * 3. If same year, check format order:
-   *    a. YYYY / MM - compress right  (2015 Jun - Sep)
-   *    b. MM / YYYY - compress left   (Jun - Sep 2015)
-   *    (not same year - stop further compression)
-   * 4. If same month, check format order:
-   *    a. MM / DD - compress right  (Jun 15 - 25)
-   *    b. DD / MM - compress left   (15 - 25 Jun)
-   * (same day was
-   */
-  protected function reduceRange(array &$from, array &$to) {
-    $sameDate = ($from['year']  == $to['year']) &&
-                ($from['month'] == $to['month']) &&
-                ($from['day']   == $to['day']);
-    if ($sameDate) {
-      $to['year']  = NULL;
-      $to['month'] = NULL;
-      $to['day']   = NULL;
-      return;
-    }
-    $hasTime =  isset($from['hour'])   || isset($to['hour']) ||
-                isset($from['minute']) || isset($to['minute']) ||
-                isset($from['second']) || isset($to['second']);
-    if ($hasTime) {
-      return;
-    }
-    if ($from['year'] == $to['year']) {
-      $format = $this->getFormat();
-      $year_weight = $format->getComponent('year')['weight'];
-      $month_weight = $format->getComponent('month')['weight'];
-      //If "year before month" compress right (otherwise left)
-      if ($year_weight <= $month_weight) {
-        $to['year'] = NULL;
-      }
-      else {
-        $from['year'] = NULL;
-      }
-
-      if ($from['month'] == $to['month']) {
-        $day_weight = $format->getComponent('month')['weight'];
-        //If "month before day" compress right (otherwise left)
-        if ($month_weight <= $day_weight) {
-          $to['month'] = NULL;
-        }
-        else {
-          $from['month'] = NULL;
-        }
-      }
-    }
   }
 
   /**
