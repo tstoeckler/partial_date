@@ -8,8 +8,6 @@ use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\TypedData\DataDefinition;
 use Drupal\Core\TypedData\MapDataDefinition;
 use Drupal\partial_date\Plugin\DataType\PartialDateTimeComputed;
-use Drupal\partial_date\DateTools;
-use Drupal\partial_date\Entity\PartialDateFormat;
 
 /**
  * Plugin implementation of the 'partial_date' field type.
@@ -159,11 +157,6 @@ class PartialDateTimeItem extends FieldItemBase {
    */
   public function preSave() {
     parent::preSave();
-    $this->normalizeValues();
-    $values = $this->fillEmptyValues();
-    //Calculate timestamps
-    $this->set('timestamp', $this->getTimestamp($values));
-    $this->set('timestamp_to', $this->getTimestampTo($values));
 
     $data = $this->data;
     $data['check_approximate'] = $this->check_approximate;
@@ -284,99 +277,6 @@ class PartialDateTimeItem extends FieldItemBase {
     );
     return $elements;
   }
-
-  /*
-   * Fill any missing values from the other end of the range (if any).
-   * Ex. if year=NULL, but year_to=2015, make year=2015 too
-   *   and viceversa, if year_to not set, but we have a year set.
-   * Note: If both values are set (and different) stop the normalization for
-   * the rest of the components.
-   * Ex. from 2015 Jan 15 to Jul
-   * The year is assumed the same, but the day is not.
-   */
-  public function normalizeValues(){
-    $values = $this->getValue();
-    foreach (partial_date_component_keys() as $key){
-      $keyTo = $key . '_to';
-      if (!empty($values[$key]) && empty($values[$keyTo])) {
-        $this->set($keyTo, $values[$key]);
-      } elseif (!empty($values[$keyTo]) && empty($values[$key])) {
-        $this->set($key, $values[$keyTo]);
-      } elseif (!empty($values[$keyTo]) && !empty($values[$key]) && $values[$keyTo] != $values[$key]) {
-        break;
-      }
-    }
-  }
-
-  public function getTimestamp($values) {
-    $date = $values['year'] . '.'
-        . sprintf('%02s', $values['month'])   // 0 or 1-12
-        . sprintf('%02s', $values['day'])     // 0 or 1-31
-        . sprintf('%02s', $values['hour'])    // 0 or 1-24
-        . sprintf('%02s', $values['minute'])  // 0 or 1-60
-        . sprintf('%02s', $values['second']); // 0 or 1-60
-    return ((double) $date);
-  }
-
-  public function getTimestampTo($values) {
-    $date = $values['year_to'] . '.'
-        . sprintf('%02s', $values['month_to'])   // 0 or 1-12
-        . sprintf('%02s', $values['day_to'])     // 0 or 1-31
-        . sprintf('%02s', $values['hour_to'])    // 0 or 1-24
-        . sprintf('%02s', $values['minute_to'])  // 0 or 1-60
-        . sprintf('%02s', $values['second_to']); // 0 or 1-60
-    return ((double) $date);
-  }
-
-  /**
-   * This generates the best estimate for the date components based on the
-   * submitted values.
-   */
-  function fillEmptyValues() {
-    static $base;
-    if (!isset($base)) {
-      $base = array(
-        'year'   => PD2_YEAR_MIN,    'year_to'   => PD2_YEAR_MAX,
-        'month'  => 1,               'month_to'  => 12,
-        'day'    => 1,               'day_to'    => NULL, //should be re-calculated
-        'hour'   => 0,               'hour_to'   => 23,
-        'minute' => 0,               'minute_to' => 59,
-        'second' => 0,               'second_to' => 59,
-      );
-    }
-    $values = array_filter($this->getValue()) + $base;
-    if (empty($values['day_to'])) {
-      $values['day_to'] = DateTools::lastDayOfMonth($values['month_to'], $values['year_to']);
-    }
-    return $values;
-  }
-
-  public function hasRangeValue() {
-    if (!$this->getSetting('has_range')) {
-      return FALSE;  //range values not allowed!
-    }
-    $values = $this->getValue();
-    foreach (partial_date_component_keys() as $key) {
-      if (!empty($values[$key . '_to'])) {
-        return TRUE;
-      }
-    }
-    return FALSE;
-  }
-
-  public function hasTimeValue() {
-    if (!$this->getSetting('has_time')) {
-      return FALSE;  //time values not allowed!
-    }
-    $values = $this->getValue();
-    foreach (array('hour', 'minute', 'second') as $key) {
-      if (!empty($values[$key]) || !empty($values[$key . '_to'])) {
-        return TRUE;
-      }
-    }
-    return FALSE;
-  }
-
 
   /**
    * {@inheritdoc}
