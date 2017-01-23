@@ -218,45 +218,7 @@ class PartialDateTimeItem extends FieldItemBase {
    */
   public function isEmpty() {
     $value = $this->getValue();
-    if (empty($value) || !is_array($value)) {
-      return TRUE;
-    }
-    if (!empty($value['timestamp'])) {
-      return FALSE;
-    }
-    if (!empty($value['timestamp_to'])) {
-      return FALSE;
-    }
-    if (!empty($value['txt_short'])) {
-      return FALSE;
-    }
-    if (!empty($value['txt_long'])) {
-      return FALSE;
-    }
-//    $item = $this->getEntity();
-//    if ((isset($item['_remove']) && $item['_remove']) || !is_array($item)) {
-//      return TRUE;
-//    }
-//    foreach (array('from', 'to') as $base) {
-//      if (empty($item[$base])) {
-//        continue;
-//      }
-//      foreach (partial_date_components() as $key => $label) {
-//        if ($key == 'timezone') {
-//          continue;
-//        }
-//        if (isset($item[$base][$key]) && strlen($item[$base][$key])) {
-//          return FALSE;
-//        }
-//        if (isset($item[$base][$key . '_estimate']) && strlen($item[$base][$key . '_estimate'])) {
-//          return FALSE;
-//        }
-//      }
-//    }
-//
-//    return !((isset($item['txt_short']) && strlen($item['txt_short'])) ||
-//           (isset($item['txt_long']) && strlen($item['txt_long'])));
-    return FALSE;
+    return empty($value);
   }
 
   /**
