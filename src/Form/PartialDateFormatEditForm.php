@@ -150,9 +150,16 @@ class PartialDateFormatEditForm extends EntityForm {
   private function buildComponentsTable($components, PartialDateFormatInterface $format) {
     $table = array(
       '#type' => 'table',
-      '#header' => array($this->t('Component'), $this->t('Value format'), $this->t('Value empty text'), $this->t('Weight')),
+      '#header' => array(
+        'label' => $this->t('Component'),
+        'value' => $this->t('Value format'),
+        'empty' => $this->t('Value empty text'),
+        'weight' => $this->t('Weight'),
+      ),
       '#empty' => $this->t('This should not be empty. Try re-installing Partial Date module.'),
       '#tableselect' => FALSE,
+      // The weight column is currently not hidden due to the colspan usage.
+      // See https://www.drupal.org/node/997370.
       '#tabledrag' => array(
         array(
           'action' => 'order',
