@@ -221,10 +221,6 @@ function partial_date_component_keys() {
   return $components;
 }
 
-function remove_time_components(array &$components){
-  unset($components['hour'], $components['minute'], $components['second'], $components['timezone']);
-}
-
 /**
  * Returns a translated array of timezone handling options.
  *

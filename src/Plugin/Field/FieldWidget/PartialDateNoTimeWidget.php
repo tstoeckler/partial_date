@@ -39,7 +39,7 @@ class PartialDateNoTimeWidget extends PartialDateWidget {
 
   public static function defaultSettings() {
     $components = array_fill_keys(partial_date_component_keys(), 1);
-    remove_time_components($components);
+    unset($components['hour'], $components['minute'], $components['second'], $components['timezone']);
     return array(
       'has_time' => 0,
       'components' => $components,
