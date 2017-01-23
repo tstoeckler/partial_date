@@ -6,6 +6,7 @@ use Drupal\Core\Field\FieldStorageDefinitionInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\TypedData\DataDefinition;
 use Drupal\Core\TypedData\MapDataDefinition;
+use Drupal\partial_date\DateTools;
 use Drupal\partial_date\Plugin\DataType\PartialDateTimeComputed;
 
 /**
@@ -55,14 +56,6 @@ class PartialDateTimeRangeItem extends PartialDateTimeItem {
 
   /**
    * {@inheritdoc}
-   * Equivalent of hook_field_schema().
-   *
-   * This module stores a dates in a string that represents the data that the user
-   * entered and a float timestamp that represents the best guess for the date.
-   *
-   * After tossing up the options a number of times, I've taken the conservative
-   * opinion of storing all date components separately rather than storing these
-   * in a singular field.
    */
   public static function schema(FieldStorageDefinitionInterface $field) {
     $schema = parent::schema($field);
@@ -176,7 +169,7 @@ class PartialDateTimeRangeItem extends PartialDateTimeItem {
       }
     }
     if (!$timestamp_components['day']) {
-      $month_table = partial_date_month_matrix($timestamp_components['year']);
+      $month_table = DateTools::monthMatrix($timestamp_components['year']);
       if (isset($month_table[$timestamp_components['month'] - 1])) {
         $timestamp_components['day'] = $month_table[$timestamp_components['month'] - 1];
       }
@@ -190,16 +183,8 @@ class PartialDateTimeRangeItem extends PartialDateTimeItem {
   /**
    * {@inheritdoc}
    */
-  public function isEmpty() {
-    $val_to = $this->get('timestamp_to')->getValue();
-    return parent::isEmpty() && !isset($val_to);
-  }
-
-  /**
-   * {@inheritdoc}
-   */
   public function storageSettingsForm(array &$form, FormStateInterface $form_state, $has_data) {
-    $elements = parent::fieldSettingsForm($form, $form_state);
+    $elements = parent::storageSettingsForm($form, $form_state, $has_data);
     $settings = $this->getSettings();
     foreach (partial_date_components() as $key => $label) {
       $elements['minimum_components']['from_granularity_' . $key]['#title'] = t('From @date_component', array('@date_component' => $label));
@@ -220,6 +205,13 @@ class PartialDateTimeRangeItem extends PartialDateTimeItem {
         '#title' => t('To Estimate @date_component', array('@date_component' => $label)),
         '#default_value' => !empty($settings['minimum_components']['to_estimates_' . $key]),
       );
+      if (_partial_date_component_type($key) === 'time') {
+        $element['minimum_components']['to_estimates_' . $key] = array(
+          'visible' => array(
+            ':input[id="has_time"]' => array('checked' => TRUE),
+          ),
+        );
+      }
     }
     return $elements;
   }
