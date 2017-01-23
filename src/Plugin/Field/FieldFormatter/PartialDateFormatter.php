@@ -2,7 +2,6 @@
 
 namespace Drupal\partial_date\Plugin\Field\FieldFormatter;
 
-use Drupal\Component\Utility\SortArray;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Field\FieldDefinitionInterface;
 use Drupal\Core\Field\FieldItemListInterface;
@@ -12,7 +11,6 @@ use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
 use Drupal\partial_date\Plugin\Field\FieldType\PartialDateTimeItem;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Drupal\partial_date\DateTools;
-use Drupal\partial_date\Entity\PartialDateFormat;
 
 /**
  * Plugin implementation for Partial Date formatter.
