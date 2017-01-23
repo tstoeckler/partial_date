@@ -24,6 +24,9 @@ class PartialDateComponentsElement extends FormElement {
       '#element_validate' => [[get_class($this), 'validate']], //array('partial_date_element_validate'),
       '#theme' => 'partial_date_components_element',
       '#theme_wrappers' => array('form_element'),
+      '#options' => partial_date_components(['timezone']),
+      '#show_time' => TRUE,
+      '#time_states' => FALSE,
     ];
   }
   
@@ -31,20 +34,17 @@ class PartialDateComponentsElement extends FormElement {
    * Process callback.
    */
   public static function process(&$element, FormStateInterface $form_state, &$complete_form) {
-    $options = isset($element['#options']) ? $element['#options'] : partial_date_components(array('timezone'));
-    $showTime = isset($element['#show_time']) ? $element['#show_time'] : TRUE; 
-    $timeStates = isset($element['#time_states']) ? $element['#time_states'] : FALSE; 
-    if (!$showTime) {
-      unset($options['hour'], $options['minute'], $options['second']);
+    if ($element['#show_time']) {
+      unset($element['#options']['hour'], $element['#options']['minute'], $element['#options']['second']);
     }
-    foreach ($options as $key => $label) {
+    foreach ($element['#options'] as $key => $label) {
       $element[$key] = array(
         '#type' => 'checkbox',
         '#title' => $label,
         '#value' => isset($element['#value'][$key]) ? $element['#value'][$key] : 0,
       );
-      if ($timeStates && _partial_date_component_type($key) == 'time') {
-        $element[$key]['#states'] = $timeStates;
+      if ($element['#time_states'] && _partial_date_component_type($key) == 'time') {
+        $element[$key]['#states'] = $element['#time_states'];
       }
     }
     return $element;
