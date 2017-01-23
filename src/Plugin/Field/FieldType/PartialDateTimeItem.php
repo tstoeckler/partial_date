@@ -7,6 +7,7 @@ use Drupal\Core\Field\FieldStorageDefinitionInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\TypedData\DataDefinition;
 use Drupal\Core\TypedData\MapDataDefinition;
+use Drupal\partial_date\DateTools;
 use Drupal\partial_date\Plugin\DataType\PartialDateTimeComputed;
 
 /**
@@ -143,8 +144,8 @@ class PartialDateTimeItem extends FieldItemBase {
     $constraints[] = $constraint_manager->create('ComplexData', [
       'year' => [
         'Range' => [
-          'min' => PD2_YEAR_MIN,
-          'max' => PD2_YEAR_MAX,
+          'min' => DateTools::YEAR_MIN,
+          'max' => DateTools::YEAR_MAX,
         ],
       ],
     ]);
@@ -164,7 +165,7 @@ class PartialDateTimeItem extends FieldItemBase {
     // Provide some default values for the timestamp components. Components with
     // actual values will be replaced below.
     $timestamp_components = [
-      'year' => PD2_YEAR_MIN,
+      'year' => DateTools::YEAR_MIN,
       'month' => 1,
       'day' => 1,
       'hour' => 0,

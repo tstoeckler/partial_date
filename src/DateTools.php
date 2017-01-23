@@ -19,6 +19,41 @@ use Drupal\Component\Utility\Unicode;
 class DateTools {
 
   /**
+   * The minimum year that the module supports.
+   *
+   * Modifying this will alter how new timestamps are stored in the database.
+   *
+   * Setting to the something huge like 999999999999 should be OK, which would
+   * be needed for things like the scienific age of the universe. +/- 2000 years
+   * do not calculate leap years etc, and use a fixed number of seconds per year
+   * based on the length of the tropical year in 2000.
+   *
+   * @var int
+   */
+  const YEAR_MIN = -999999999999;
+
+  /**
+   * The maximum year that the module supports.
+   *
+   * Modifying this will alter how new timestamps are stored in the database.
+   *
+   * @var int
+   */
+  const YEAR_MAX = 999999999999;
+
+  /**
+   * The number of seconds for a tropical year in 2000.
+   *
+   * Outside of the 1AD to 3999AD, leap years are ignored and a set number of
+   * seconds per year are used to calculate the number seconds per year for the
+   * timestamp estimations. This is a float column, so the percision of this
+   * should be calculated to decide if this can be reduced even more.
+   *
+   * @var int
+   */
+  const SECONDS_PER_YEAR = 31556925;
+
+  /**
    * Returns true, if given $year is a leap year.
    *
    * @param  integer $year

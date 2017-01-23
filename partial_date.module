@@ -1,6 +1,7 @@
 <?php
 
 use Drupal\Core\Routing\RouteMatchInterface;
+use Drupal\partial_date\DateTools;
 
 /**
  * Implements hook_help().
@@ -177,41 +178,6 @@ function partial_date_reduce_range_values(&$from, &$to) {
 #     Returns the valid month lengths based of the specified year.             #
 #                                                                              #
 ################################################################################
-
-/**
- * The minimum year that the module supports.
- *
- * Modifying this will alter how new timestamps are stored in the database.
- *
- * Setting to the something huge like 999999999999 should be OK, which would
- * be needed for things like the scienific age of the universe. +/- 2000 years
- * do not calculate leap years etc, and use a fixed number of seconds per year
- * based on the length of the tropical year in 2000.
- *
- * @var int
- */
-define('PD2_YEAR_MIN', -999999999999);
-
-/**
- * The maximum year that the module supports.
- *
- * Modifying this will alter how new timestamps are stored in the database.
- *
- * @var int
- */
-define('PD2_YEAR_MAX', 999999999999);
-
-/**
- * The number of seconds for a tropical year in 2000.
- *
- * Outside of the 1AD to 3999AD, leap years are ignored and a set number of
- * seconds per year are used to calculate the number seconds per year for the
- * timestamp estimations. This is a float column, so the percision of this
- * should be calculated to decide if this can be reduced even more.
- *
- * @var int
- */
-define('PD2_SEC_PER_YEAR', 31556925);
 
 /**
  * These are the core components that always exist, but are shown or hidden
@@ -490,7 +456,7 @@ function partial_date_mktime(array $components) {
   // correct months > 12 and months < 1
   if ($year < -99999 || $year > 99999) {
     // Calculate the average number of seconds in a year.
-    $seconds_in_year = ($year - 1970) * PD2_SEC_PER_YEAR;
+    $seconds_in_year = ($year - 1970) * DateTools::SECONDS_PER_YEAR;
 
     $leapyear = partial_date_is_leap_year($year);
     for ($mcount = 0; $mcount < ($month - 1); $mcount++) {

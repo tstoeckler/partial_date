@@ -97,8 +97,8 @@ class PartialDateTimeRangeItem extends PartialDateTimeItem {
     $constraints[] = $constraint_manager->create('ComplexData', [
       'year_to' => [
         'Range' => [
-          'min' => PD2_YEAR_MIN,
-          'max' => PD2_YEAR_MAX,
+          'min' => DateTools::YEAR_MIN,
+          'max' => DateTools::YEAR_MAX,
         ],
       ],
     ]);
@@ -117,7 +117,7 @@ class PartialDateTimeRangeItem extends PartialDateTimeItem {
     // Provide some default values for the timestamp components. Components with
     // actual values will be replaced below.
     $timestamp_components = [
-      'year' => PD2_YEAR_MAX,
+      'year' => DateTools::YEAR_MAX,
       'month' => 12,
       // A sensible default for this will be generated below using the month.
       'day' => 0,
