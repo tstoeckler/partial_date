@@ -226,33 +226,7 @@ class PartialDateTimeItem extends FieldItemBase {
    */
   public function storageSettingsForm(array &$form, FormStateInterface $form_state, $has_data) {
     $settings = $this->getSettings();
-    $elements['minimum_components'] = array(
-      '#type' => 'details',
-      '#title' => t('Minimum components'),
-      '#description' => t('These are used to determine if the field is incomplete during validation. All possible fields are listed here, but these are only checked if enabled in the instance settings.'),
-      '#open' => FALSE,
-    );
-    foreach (partial_date_components() as $key => $label) {
-      $elements['minimum_components']['from_granularity_' . $key] = array(
-        '#type' => 'checkbox',
-        '#title' => $label,
-        '#default_value' => $settings['minimum_components']['from_granularity_' . $key],
-      );
-    }
-    foreach (partial_date_components(array('timezone')) as $key => $label) {
-      $elements['minimum_components']['from_estimates_' . $key] = array(
-        '#type' => 'checkbox',
-        '#title' => t('Estimate @date_component', array('@date_component' => $label)),
-        '#default_value' => $settings['minimum_components']['from_estimates_' . $key],
-      );
-    }
-    $elements['minimum_components']['txt_short'] = array(
-      '#type' => 'checkbox',
-      '#title' => t('Short date text'),
-      '#default_value' => $settings['minimum_components']['txt_short'],
-    );
-    //debug_only:  var_dump($settings);
-    $elements = array();
+
     $elements['has_time'] = array(
       '#type' => 'checkbox',
       '#id' => 'has_time',
@@ -266,22 +240,47 @@ class PartialDateTimeItem extends FieldItemBase {
       '#default_value' => !empty($settings['require_consistency']),
       '#description' => t('Check to enforce a consistent date. For example, if day component is set, month (and year) are required too.'),
     );
+
+    $elements['minimum_components'] = array(
+      '#type' => 'details',
+      '#title' => t('Minimum components'),
+      '#description' => t('These are used to determine if the field is incomplete during validation. All possible fields are listed here, but these are only checked if enabled in the instance settings.'),
+      '#open' => FALSE,
+    );
+    $time_states = array(
+      'visible' => array(
+        ':input[id="has_time"]' => array('checked' => TRUE),
+      ),
+    );
+    foreach (partial_date_components() as $key => $label) {
+      $elements['minimum_components']['from_granularity_' . $key] = array(
+        '#type' => 'checkbox',
+        '#title' => $label,
+        '#default_value' => $settings['minimum_components']['from_granularity_' . $key],
+      );
+
+      if ($key !== 'timezone') {
+        $elements['minimum_components']['from_estimates_' . $key] = array(
+          '#type' => 'checkbox',
+          '#title' => t('Estimate @date_component', array('@date_component' => $label)),
+          '#default_value' => $settings['minimum_components']['from_estimates_' . $key],
+        );
+      }
+
+      if (_partial_date_component_type($key) === 'time') {
+        $element['minimum_components']['from_granularity_' . $key] = $time_states;
+        $element['minimum_components']['from_estimates_' . $key] = $time_states;
+      }
+    }
+    $elements['minimum_components']['txt_short'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Short date text'),
+      '#default_value' => $settings['minimum_components']['txt_short'],
+    );
     $elements['minimum_components']['txt_long'] = array(
       '#type' => 'checkbox',
       '#title' => t('Long date text'),
       '#default_value' => $settings['minimum_components']['txt_long'],
-    );
-    $elements['minimum_components'] = array(
-      '#type' => 'partial_date_components_element',
-      '#title' => t('Minimum components'),
-      '#default_value' => $settings['minimum_components'],
-      '#description' => t('These are used to determine if the field is incomplete during validation.'),
-       //dynamically show/hide time components using javascript (based on another form element)
-      '#time_states' =>  array(
-          'visible' => array(
-            ':input[id="has_time"]' => array('checked' => TRUE),
-          ),
-        ),
     );
     return $elements;
   }
@@ -546,7 +545,7 @@ class PartialDateTimeItem extends FieldItemBase {
     }
     // Unserialize the data property.
     // @todo The storage controller should take care of this, see
-    //   https://www.drupal.org/node/2414835
+    //   https://www.drupal.org/node/2232427
     if (is_string($values['data'])) {
       $values['data'] = unserialize($values['data']);
     }
