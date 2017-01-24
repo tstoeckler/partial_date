@@ -4,7 +4,6 @@ namespace Drupal\partial_date\Element;
 
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Render\Element\FormElement;
-use Drupal\partial_date\DateTools;
 
 /**
  * Provides a form element for partial date widget.
@@ -21,7 +20,13 @@ class PartialDateElement extends FormElement {
     return [
       '#input' => TRUE,
       '#process' => [[get_class($this), 'process']],
-      '#element_validate' => [[get_class($this), 'validate']],
+      '#default_value' => FALSE,
+      '#granularity' => FALSE,
+      '#minimum_components' => [],
+//        '#estimates' => FALSE,
+//        '#estimate_options' => FALSE,
+//        '#field_sufix' => '',
+      '#increments' => array(),
       '#theme_wrappers' => array(
         'container' => array(
           '#attributes' => array(
@@ -37,16 +42,6 @@ class PartialDateElement extends FormElement {
    * Process callback.
    */
   public static function process(&$element, FormStateInterface $form_state, &$complete_form) {
-    //add missing array keys to avoid isset(...)
-    $element += array(
-        '#default_value' => FALSE,
-        '#granularity' => FALSE,
-        '#minimum_components' => FALSE,
-//        '#estimates' => FALSE,
-//        '#estimate_options' => FALSE,
-//        '#field_sufix' => '',
-        '#increments' => array(),
-      );
     $granularity = $element['#granularity'];
 //    $estimates = $element['#estimates'];
 //    $options = $element['#estimate_options'];
