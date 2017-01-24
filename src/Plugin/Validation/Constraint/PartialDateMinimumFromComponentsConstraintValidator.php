@@ -6,9 +6,9 @@ use Symfony\Component\Validator\Constraint;
 use Symfony\Component\Validator\ConstraintValidator;
 
 /**
- * Validates a partial date constraint.
+ * Validates a partial date minimum from components constraint.
  */
-class PartialDateConstraintValidator extends ConstraintValidator {
+class PartialDateMinimumFromComponentsConstraintValidator extends ConstraintValidator {
 
   /**
    * {@inheritdoc}
@@ -24,13 +24,13 @@ class PartialDateConstraintValidator extends ConstraintValidator {
     // Get the file to execute validators.
     $field_storage_definition = $value->getFieldDefinition()->getFieldStorageDefinition();
     $minimum_components = $field_storage_definition->getSetting('minimum_components');
-    foreach (array_keys(partial_date_components()) as $component) {
+    foreach (partial_date_components() as $name => $label) {
       $required =
-        $minimum_components['from_granularity_' . $component]
-        || (($component !== 'year') && $minimum_components['from_estimates_' . $component]);
+        $minimum_components['from']['granularity'][$name]
+        || (($name !== 'timezone') && $minimum_components['from']['estimates'][$name]);
 
-      if ($required && empty($from[$component])) {
-        $this->context->addViolation('@component is required', ['@component' => $component]);
+      if ($required && empty($from[$name])) {
+        $this->context->addViolation('@component is required', ['@component' => $label]);
       }
     }
     foreach (['txt_short', 'txt_long'] as $property) {

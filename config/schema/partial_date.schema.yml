@@ -163,6 +163,28 @@ partial_date.format.component_format:
       type: string
       label: 'empty'
 
+partial_date.component_booleans:
+  type: mapping
+  mapping:
+    year:
+      type: boolean
+    month:
+      type: boolean
+    day:
+      type: boolean
+    hour:
+      type: boolean
+    minute:
+      type: boolean
+    second:
+      type: boolean
+
+partial_date.component_booleans_with_timezone:
+  type: partial_date.component_booleans
+  mapping:
+    timezone:
+      type: boolean
+
 field.field_settings.partial_date_time:
   type: mapping
   label: 'Partial date time field settings'
@@ -213,32 +235,13 @@ field.storage_settings.partial_date_time:
     minimum_components:
       type: mapping
       mapping:
-        from_granularity_year:
-          type: boolean
-        from_granularity_month:
-          type: boolean
-        from_granularity_day:
-          type: boolean
-        from_granularity_hour:
-          type: boolean
-        from_granularity_minute:
-          type: boolean
-        from_granularity_second:
-          type: boolean
-        from_granularity_timezone:
-          type: boolean
-        from_estimate_year:
-          type: boolean
-        from_estimate_month:
-          type: boolean
-        from_estimate_day:
-          type: boolean
-        from_estimate_hour:
-          type: boolean
-        from_estimate_minute:
-          type: boolean
-        from_estimate_second:
-          type: boolean
+        from:
+          type: mapping
+          mapping:
+            granularity:
+              type: partial_date.component_booleans_with_timezone
+            estimate:
+              type: partial_date.component_booleans
         txt_short:
           type: boolean
         txt_long:
@@ -251,29 +254,10 @@ field.storage_settings.partial_date_time_range:
     minimum_components:
       type: mapping
       mapping:
-        to_granularity_year:
-          type: boolean
-        to_granularity_month:
-          type: boolean
-        to_granularity_day:
-          type: boolean
-        to_granularity_hour:
-          type: boolean
-        to_granularity_minute:
-          type: boolean
-        to_granularity_second:
-          type: boolean
-        to_granularity_timezone:
-          type: boolean
-        to_estimate_year:
-          type: boolean
-        to_estimate_month:
-          type: boolean
-        to_estimate_day:
-          type: boolean
-        to_estimate_hour:
-          type: boolean
-        to_estimate_minute:
-          type: boolean
-        to_estimate_second:
-          type: boolean
+        to:
+          type: mapping
+          mapping:
+            granularity:
+              type: partial_date.component_booleans_with_timezone
+            estimate:
+              type: partial_date.component_booleans

@@ -2,7 +2,7 @@
 
 namespace Drupal\partial_date\Plugin\Validation\Constraint;
 
-use Drupal\Core\Validation\Annotation\Constraint;
+use Symfony\Component\Validator\Constraint;
 
 /**
  * Provides a constraint for a valid partial to date.
@@ -12,10 +12,10 @@ use Drupal\Core\Validation\Annotation\Constraint;
  * of replacing it.
  *
  * @Constraint(
- *   id = "PartialToDate",
- *   label = @Translation("Partial to date", context = "Validation"),
+ *   id = "PartialDateMinimumToComponents",
+ *   label = @Translation("Partial date minimum to components", context = "Validation"),
  * )
  */
-class PartialDateConstraint extends Constraint {
+class PartialDateMinimumToComponentsConstraint extends Constraint {
 
 }

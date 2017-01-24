@@ -2,7 +2,6 @@
 
 namespace Drupal\partial_date\Plugin\Field\FieldWidget;
 
-use Drupal\Component\Utility\NestedArray;
 use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Field\WidgetBase;
 use Drupal\Core\Field\FieldItemListInterface;
@@ -10,7 +9,6 @@ use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Symfony\Component\DependencyInjection\ContainerInterface;
-use Symfony\Component\Validator\ConstraintViolationInterface;
 
 /**
  * Provides an widget for Partial Date fields.
@@ -96,7 +94,7 @@ class PartialDateWidget extends WidgetBase implements ContainerFactoryPluginInte
       '#default_value' => $item->from,
       '#field_sufix' => '',
       '#granularity' => $components,
-      '#minimum_components' => $this->getFieldSetting('minimum_components'),
+      '#minimum_components' => $this->getFieldSetting('minimum_components')['from']['granularity'],
       '#component_styles' => $config->get('partial_date_component_field_inline_styles'),
       '#increments' => $this->getSetting('increments'),
     );
@@ -348,15 +346,6 @@ class PartialDateWidget extends WidgetBase implements ContainerFactoryPluginInte
       }
     }
     return $field;
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function errorElement(array $element, ConstraintViolationInterface $error, array $form, \Drupal\Core\Form\FormStateInterface $form_state) {
-    $property_path = array_reverse(explode('.', $error->getPropertyPath()));
-    $sub_path = array_slice($property_path, array_search($this->fieldDefinition->getName(), $property_path));
-    return NestedArray::getValue($element, array_reverse($sub_path));
   }
 
   /**

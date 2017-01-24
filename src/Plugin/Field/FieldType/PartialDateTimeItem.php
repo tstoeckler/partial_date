@@ -46,7 +46,8 @@ class PartialDateTimeItem extends FieldItemBase {
       else {
         $properties[$key] = DataDefinition::create('integer')
           ->setLabel($label)
-          ->setDescription(t('The ' . $label . ' for the starting date component.'));
+          ->setDescription(t('The ' . $label . ' for the starting date component.'))
+          ->setRequired($minimum_components['from']['granularity'][$key]);
       }
     }
 
@@ -70,8 +71,6 @@ class PartialDateTimeItem extends FieldItemBase {
    * {@inheritdoc}
    */
   public static function schema(FieldStorageDefinitionInterface $field) {
-    $minimum_components = $field->getSetting('minimum_components');
-
     $schema = array(
       'columns' => array(
         'timestamp' => array(
@@ -87,13 +86,15 @@ class PartialDateTimeItem extends FieldItemBase {
           'type' => 'varchar',
           'length' => 100,
           'description' => 'A editable display field for this date for the short format.',
-          'not null' => $minimum_components['txt_short'],
+          'not null' => FALSE,
+          'default' => '',
         ),
         'txt_long' => array(
           'type' => 'varchar',
           'length' => 255,
           'description' => 'A editable display field for this date for the long format.',
-          'not null' => $minimum_components['txt_long'],
+          'not null' => FALSE,
+          'default' => '',
         ),
         'data' => array(
           'description' => 'The configuration data for the effect.',
@@ -123,10 +124,9 @@ class PartialDateTimeItem extends FieldItemBase {
           'size' => ($key === 'year') ? 'big' : 'small',
         );
       }
-      $column += array(
-        'not null' => $minimum_components['from_granularity_' . $key],
-        'default' => NULL,
-      );
+
+      $column['not null'] = FALSE;
+      $column['default'] = ($key === 'timezone') ? '' : 0;
       $schema['columns'][$key] = $column;
     }
     return $schema;
@@ -139,14 +139,26 @@ class PartialDateTimeItem extends FieldItemBase {
     $constraint_manager = $this->getTypedDataManager()->getValidationConstraintManager();
     $constraints = parent::getConstraints();
 
-    $constraints[] = $constraint_manager->create('PartialDate', []);
+    $constraints[] = $constraint_manager->create('PartialDateMinimumFromComponents', []);
     $constraints[] = $constraint_manager->create('ComplexData', [
       'year' => [
-        'Range' => [
-          'min' => DateTools::YEAR_MIN,
-          'max' => DateTools::YEAR_MAX,
-        ],
+        'Range' => ['min' => DateTools::YEAR_MIN, 'max' => DateTools::YEAR_MAX],
       ],
+      'month' => [
+        'Range' => ['min' => 0, 'max' => 12],
+      ],
+      'hour' => [
+        'Range' => ['min' => 0, 'max' => 23],
+      ],
+      'minute' => [
+        'Range' => ['min' => 0, 'max' => 59],
+      ],
+      'second' => [
+        'Range' => ['min' => 0, 'max' => 59],
+      ],
+    ]);
+    $constraints[] = $constraint_manager->create('ValidDay', [
+      'property' => 'from',
     ]);
 
     return $constraints;
@@ -238,6 +250,7 @@ class PartialDateTimeItem extends FieldItemBase {
       '#type' => 'details',
       '#title' => t('Minimum components'),
       '#description' => t('These are used to determine if the field is incomplete during validation. All possible fields are listed here, but these are only checked if enabled in the instance settings.'),
+      '#tree' => TRUE,
       '#open' => FALSE,
     );
     $time_states = array(
@@ -245,35 +258,37 @@ class PartialDateTimeItem extends FieldItemBase {
         ':input[id="has_time"]' => array('checked' => TRUE),
       ),
     );
+
+    $minimum_components = $this->getSetting('minimum_components');
     foreach (partial_date_components() as $key => $label) {
-      $elements['minimum_components']['from_granularity_' . $key] = array(
+      $elements['minimum_components']['from']['granularity'][$key] = array(
         '#type' => 'checkbox',
         '#title' => $label,
-        '#default_value' => $settings['minimum_components']['from_granularity_' . $key],
+        '#default_value' => $minimum_components['from']['granularity'][$key],
       );
 
       if ($key !== 'timezone') {
-        $elements['minimum_components']['from_estimates_' . $key] = array(
+        $elements['minimum_components']['from']['estimates'][$key] = array(
           '#type' => 'checkbox',
           '#title' => t('Estimate @date_component', array('@date_component' => $label)),
-          '#default_value' => $settings['minimum_components']['from_estimates_' . $key],
+          '#default_value' => $minimum_components['from']['estimates'][$key],
         );
       }
 
       if (_partial_date_component_type($key) === 'time') {
-        $element['minimum_components']['from_granularity_' . $key] = $time_states;
-        $element['minimum_components']['from_estimates_' . $key] = $time_states;
+        $element['minimum_components']['from']['granularity'][$key] = $time_states;
+        $element['minimum_components']['from']['estimates'][$key] = $time_states;
       }
     }
     $elements['minimum_components']['txt_short'] = array(
       '#type' => 'checkbox',
       '#title' => t('Short date text'),
-      '#default_value' => $settings['minimum_components']['txt_short'],
+      '#default_value' => $minimum_components['txt_short'],
     );
     $elements['minimum_components']['txt_long'] = array(
       '#type' => 'checkbox',
       '#title' => t('Long date text'),
-      '#default_value' => $settings['minimum_components']['txt_long'],
+      '#default_value' => $minimum_components['txt_long'],
     );
     return $elements;
   }
@@ -361,22 +376,28 @@ class PartialDateTimeItem extends FieldItemBase {
   public static function defaultStorageSettings() {
     $settings = array(
       'has_time' => TRUE,
-      'has_range' => TRUE,
       'require_consistency' => FALSE,
       'minimum_components' => array(
-        'from_granularity_year' => FALSE,
-        'from_granularity_month' => FALSE,
-        'from_granularity_day' => FALSE,
-        'from_granularity_hour' => FALSE,
-        'from_granularity_minute' => FALSE,
-        'from_granularity_second' => FALSE,
-        'from_granularity_timezone' => FALSE,
-        'from_estimate_year' => FALSE,
-        'from_estimate_month' => FALSE,
-        'from_estimate_day' => FALSE,
-        'from_estimate_hour' => FALSE,
-        'from_estimate_minute' => FALSE,
-        'from_estimate_second' => FALSE,
+        'from' => [
+          'granularity' => [
+            'year' => FALSE,
+            'month' => FALSE,
+            'day' => FALSE,
+            'hour' => FALSE,
+            'minute' => FALSE,
+            'second' => FALSE,
+            'timezone' => FALSE,
+          ],
+          'estimates' => [
+            'year' => FALSE,
+            'month' => FALSE,
+            'day' => FALSE,
+            'hour' => FALSE,
+            'minute' => FALSE,
+            'second' => FALSE,
+          ],
+        ],
+
         'txt_short' => FALSE,
         'txt_long' => FALSE,
       ),

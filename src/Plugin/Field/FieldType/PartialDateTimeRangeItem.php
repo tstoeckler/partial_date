@@ -32,8 +32,7 @@ class PartialDateTimeRangeItem extends PartialDateTimeItem {
 
     $properties['timestamp_to'] = DataDefinition::create('float')
       ->setLabel(t('End timestamp'))
-      ->setDescription('Contains the best approximation for end value of the partial date')
-      ->setRequired(TRUE);
+      ->setDescription('Contains the best approximation for end value of the partial date');
 
     foreach (partial_date_components() as $key => $label) {
       if ($key == 'timezone') {
@@ -43,7 +42,7 @@ class PartialDateTimeRangeItem extends PartialDateTimeItem {
       $properties[$key . '_to'] = DataDefinition::create('integer')
         ->setLabel($label. t(' end '))
         ->setDescription(t('The ' . $label . ' for the finishing date component.'))
-        ->setRequired($minimum_components['to_granularity_' . $key]);
+        ->setRequired($minimum_components['to']['granularity'][$key]);
     }
 
     $properties['to'] = MapDataDefinition::create()
@@ -59,8 +58,6 @@ class PartialDateTimeRangeItem extends PartialDateTimeItem {
    */
   public static function schema(FieldStorageDefinitionInterface $field) {
     $schema = parent::schema($field);
-
-    $minimum_components = $field->getSetting('minimum_components');
 
     $schema['columns']['timestamp_to'] = [
       'type' => 'float',
@@ -80,7 +77,6 @@ class PartialDateTimeRangeItem extends PartialDateTimeItem {
       $column = $schema['columns'][$key];
       //Add "*_to" columns
       $column['description'] = 'The ' . $label . ' for the finishing date component.';
-      $column['not null'] = $minimum_components['to_granularity_' . $key];
       $schema['columns'][$key . '_to'] = $column;
     }
     return $schema;
@@ -93,14 +89,26 @@ class PartialDateTimeRangeItem extends PartialDateTimeItem {
     $constraint_manager = $this->getTypedDataManager()->getValidationConstraintManager();
     $constraints = parent::getConstraints();
 
-    $constraints[] = $constraint_manager->create('PartialToDate', []);
+    $constraints[] = $constraint_manager->create('PartialDateMinimumToComponents', []);
     $constraints[] = $constraint_manager->create('ComplexData', [
       'year_to' => [
-        'Range' => [
-          'min' => DateTools::YEAR_MIN,
-          'max' => DateTools::YEAR_MAX,
-        ],
+        'Range' => ['min' => DateTools::YEAR_MIN, 'max' => DateTools::YEAR_MAX],
       ],
+      'month_to' => [
+        'Range' => ['min' => 0, 'max' => 12],
+      ],
+      'hour_to' => [
+        'Range' => ['min' => 0, 'max' => 23],
+      ],
+      'minute_to' => [
+        'Range' => ['min' => 0, 'max' => 59],
+      ],
+      'second_to' => [
+        'Range' => ['min' => 0, 'max' => 59],
+      ],
+    ]);
+    $constraints[] = $constraint_manager->create('ValidDay', [
+      'property' => 'to',
     ]);
 
     return $constraints;
@@ -185,28 +193,28 @@ class PartialDateTimeRangeItem extends PartialDateTimeItem {
    */
   public function storageSettingsForm(array &$form, FormStateInterface $form_state, $has_data) {
     $elements = parent::storageSettingsForm($form, $form_state, $has_data);
-    $settings = $this->getSettings();
+    $minimum_components = $this->getSetting('minimum_components');
     foreach (partial_date_components() as $key => $label) {
-      $elements['minimum_components']['from_granularity_' . $key]['#title'] = t('From @date_component', array('@date_component' => $label));
+      $elements['minimum_components']['from']['granularity'][$key]['#title'] = t('From @date_component', array('@date_component' => $label));
     }
     foreach (partial_date_components(array('timezone')) as $key => $label) {
-      $elements['minimum_components']['from_estimates_' . $key]['#title'] = t('From Estimate @date_component', array('@date_component' => $label));
+      $elements['minimum_components']['from']['estimates'][$key]['#title'] = t('From Estimate @date_component', array('@date_component' => $label));
     }
     foreach (partial_date_components() as $key => $label) {
-      $elements['minimum_components']['to_granularity_' . $key] = array(
+      $elements['minimum_components']['to']['granularity'][$key] = array(
         '#type' => 'checkbox',
         '#title' => t('To @date_component', array('@date_component' => $label)),
-        '#default_value' => !empty($settings['minimum_components']['to_granularity_' . $key]),
+        '#default_value' => $minimum_components['to']['granularity'][$key],
       );
     }
     foreach (partial_date_components(array('timezone')) as $key => $label) {
-      $elements['minimum_components']['to_estimates_' . $key] = array(
+      $elements['minimum_components']['to']['estimates'][$key] = array(
         '#type' => 'checkbox',
         '#title' => t('To Estimate @date_component', array('@date_component' => $label)),
-        '#default_value' => !empty($settings['minimum_components']['to_estimates_' . $key]),
+        '#default_value' => $minimum_components['to']['estimates'][$key],
       );
       if (_partial_date_component_type($key) === 'time') {
-        $element['minimum_components']['to_estimates_' . $key] = array(
+        $element['minimum_components']['to']['estimates'][$key] = array(
           'visible' => array(
             ':input[id="has_time"]' => array('checked' => TRUE),
           ),
@@ -221,21 +229,7 @@ class PartialDateTimeRangeItem extends PartialDateTimeItem {
    */
   public static function defaultStorageSettings() {
     $settings = parent::defaultStorageSettings();
-    $settings['minimum_components'] += array(
-      'to_granularity_year' => FALSE,
-      'to_granularity_month' => FALSE,
-      'to_granularity_day' => FALSE,
-      'to_granularity_hour' => FALSE,
-      'to_granularity_minute' => FALSE,
-      'to_granularity_second' => FALSE,
-      'to_granularity_timezone' => FALSE,
-      'to_estimate_year' => FALSE,
-      'to_estimate_month' => FALSE,
-      'to_estimate_day' => FALSE,
-      'to_estimate_hour' => FALSE,
-      'to_estimate_minute' => FALSE,
-      'to_estimate_second' => FALSE,
-    );
+    $settings['minimum_components']['to'] = $settings['minimum_components']['from'];
     return $settings;
   }
 
