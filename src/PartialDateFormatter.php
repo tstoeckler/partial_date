@@ -13,11 +13,11 @@ class PartialDateFormatter implements PartialDateFormatterInterface {
    * {@inheritdoc}
    */
   public function format(array $date, PartialDateFormatInterface $format) {
-    $components = $format->getComponents();
+    $components = [];
 
     $valid_components = partial_date_components();
     $last_type = FALSE;
-    foreach ($components as $type => $component) {
+    foreach ($format->getComponents() as $type => $component) {
       $markup = '';
 
       $separator = '';
