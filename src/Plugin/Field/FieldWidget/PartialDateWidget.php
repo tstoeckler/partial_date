@@ -81,11 +81,6 @@ class PartialDateWidget extends WidgetBase implements ContainerFactoryPluginInte
     $this->filterComponents($components);
 
     $element['#theme_wrappers'][] = 'form_element';
-    $element['components'] = array(
-      '#type' => 'container',
-      '#title' => t('Components'),
-      '#title_display' => 'invisible',
-    );
 
     $element['from'] = array(
       '#type' => 'partial_datetime_element',
@@ -332,7 +327,7 @@ class PartialDateWidget extends WidgetBase implements ContainerFactoryPluginInte
     foreach ($values as $delta => $value) {
       $value += array(
         'txt' => array(),
-        'components' => array('from' => ''),
+        'from' => '',
       );
       $field[$delta] = array();
       if (!empty($value['txt'])) {
@@ -340,8 +335,8 @@ class PartialDateWidget extends WidgetBase implements ContainerFactoryPluginInte
         $field[$delta]['txt_long']  = $value['txt']['long'] ?: NULL;
       }
       foreach (partial_date_components() as $key => $label) {
-        if (!empty($value['components']['from'][$key])) {
-          $field[$delta][$key] =  $value['components']['from'][$key];
+        if (!empty($value['from'][$key])) {
+          $field[$delta][$key] =  $value['from'][$key];
         }
       }
     }
