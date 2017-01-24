@@ -30,23 +30,24 @@ class PartialDateRangeWidget extends PartialDateWidget {
     $this->filterComponents($components);
 
     if ($this->getSetting('range_inline')) {
-      $element['components']['#attributes'] = array('class' => array('container-inline'));
+      $element['#attributes'] = array('class' => array('container-inline'));
     }
 
     $element['from']['#title'] = $this->t('Start date');
 
     $help_txt = $this->getSetting('help_txt');
-    $element['components']['_separator'] = array(
+    $element['_separator'] = array(
       '#type' => 'markup',
       '#markup' => '<div class="partial-date-separator">&nbsp;' . $help_txt['range_separator'] . '&nbsp;</div>',
     );
-    $element['components']['to'] = array(
+    $element['to'] = array(
       '#type' => 'partial_datetime_element',
       '#title' => t('End date'),
       '#title_display' => 'invisible',
       '#default_value' => $item->to,
       '#field_sufix' => '_to',
-      '#granularity' => $this->getSetting('components_to'),
+      '#granularity' => $components,
+      '#minimum_components' => $this->getFieldSetting('minimum_components')['to']['granularity'],
       '#component_styles' => $config->get('partial_date_component_field_inline_styles'),
       '#increments' => $this->getSetting('increments'),
     );
@@ -248,11 +249,11 @@ class PartialDateRangeWidget extends PartialDateWidget {
     //prepare field components from form element
     $field = parent::massageFormValues($values, $form, $form_state);
     foreach ($values as $delta => $value) {
-      $value['components'] += array('to' => '');
+      $value += array('to' => '');
 
       foreach (partial_date_components() as $key => $label) {
-        if (!empty($value['components']['to'][$key])) {
-          $field[$delta][$key.'_to'] = $value['components']['to'][$key];
+        if (!empty($value['to'][$key])) {
+          $field[$delta][$key . '_to'] = $value['to'][$key];
         }
       }
     }
