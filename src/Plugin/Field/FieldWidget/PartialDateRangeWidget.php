@@ -65,7 +65,7 @@ class PartialDateRangeWidget extends PartialDateWidget {
    * If no estimates are usable, return FALSE
    */
   protected function buildEstimatesElement(array $estimates) {
-    $options = $this->getFieldSetting('estimates');
+    $estimates = $this->getFieldSetting('estimates');
     $help_txt = $this->getSetting('help_txt');
     $has_content = FALSE;
     $element = array(
@@ -76,7 +76,7 @@ class PartialDateRangeWidget extends PartialDateWidget {
     $element['prefix'] = array('#plain_text' => $help_txt['estimates_prefix']);
     $components = partial_date_components();
     foreach ($estimates as $key => $value) {
-      if (!empty($value) && !empty($options[$key])) {
+      if (!empty($value) && !empty($estimates[$key])) {
         $has_content = TRUE;
         $estimate_label = t('@component estimate', array('@component' => $components[$key]));
         $blank_option = array('' => $estimate_label);
@@ -86,7 +86,7 @@ class PartialDateRangeWidget extends PartialDateWidget {
           '#title_display' => 'invisible',
 //          '#value' => empty($element['#value'][$key . '_estimate']) ? '' : $element['#value'][$key . '_estimate'],
 //          '#attributes' => $element['#attributes'],
-          '#options' => $blank_option + $this->prepareEstimateOptions($options[$key]),
+          '#options' => $blank_option + $estimates[$key],
           '#attributes' => array(
             'class' => array('estimate_selector'),
             'date_component' => $key,
@@ -99,23 +99,6 @@ class PartialDateRangeWidget extends PartialDateWidget {
       $element = FALSE;
     }
     return $element;
-  }
-
-  protected function prepareEstimateOptions($rawList) {
-    $estimateOptions = array();
-    $rawList = array_filter(array_map('trim', $rawList));
-    foreach ($rawList as $line) {
-      list($from, $to, $label) = explode('|', $line . '||');
-      if (!strlen($from) && !strlen($to)) {
-        continue;
-      }
-      $label = trim($label);
-      if (!$label) {
-        continue;
-      }
-      $estimateOptions[$from . '|' .$to] = $label;
-    }
-    return $estimateOptions;
   }
 
   /**
