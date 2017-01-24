@@ -230,19 +230,17 @@ class PartialDateTimeItem extends FieldItemBase {
    * {@inheritdoc}
    */
   public function storageSettingsForm(array &$form, FormStateInterface $form_state, $has_data) {
-    $settings = $this->getSettings();
-
     $elements['has_time'] = array(
       '#type' => 'checkbox',
       '#id' => 'has_time',
       '#title' => t('Allow time specification'),
-      '#default_value' => !empty($settings['has_time']),
+      '#default_value' => $this->getSetting('has_time'),
       '#description' => t('Clear if not interested in holding time. Check to make time controls available.'),
     );
     $elements['require_consistency'] = array(
       '#type' => 'checkbox',
       '#title' => t('Require consistent values'),
-      '#default_value' => !empty($settings['require_consistency']),
+      '#default_value' => $this->getSetting('require_consistency'),
       '#description' => t('Check to enforce a consistent date. For example, if day component is set, month (and year) are required too.'),
     );
 
@@ -297,19 +295,20 @@ class PartialDateTimeItem extends FieldItemBase {
    * {@inheritdoc}
    */
   public function fieldSettingsForm(array $form, FormStateInterface $form_state) {
-    $settings = $this->getSettings();
     $elements['estimates'] = array(
       '#type' => 'details',
       '#title' => t('Base estimate values'),
       '#description' => t('These fields provide options for additional fields that can be used to represent corresponding date / time components. They define time periods where an event occured when exact details are unknown. All of these fields have the format "start|end|label", one per line, where start marks when this period started, end marks the end of the period and the label is shown to the user. Instance settings will be used whenever possible on forms, but views integration (once completed) will use the field values. Note that if used, the formatters will replace any corresponding date / time component with the options label value.'),
       '#open' => FALSE,
     );
+
+    $estimates = $this->getSetting('estimates');
     foreach (partial_date_components() as $key => $label) {
       if ($key == 'timezone') {
         continue;
       }
       $value = array();
-      foreach ($settings['estimates'][$key] as $range => $option_label) {
+      foreach ($estimates[$key] as $range => $option_label) {
         $value[] = $range . '|' . $option_label;
       }
       $elements['estimates'][$key] = array(
@@ -429,9 +428,9 @@ class PartialDateTimeItem extends FieldItemBase {
           '8|10' => t('Autumn'),
         ),
         'day' => array(
-          '0|12' => t('The start of the month'),
-          '10|20' => t('The middle of the month'),
-          '18|31' => t('The end of the month'),
+          '0|10' => t('The start of the month'),
+          '11|20' => t('The middle of the month'),
+          '21|31' => t('The end of the month'),
         ),
         'hour' => array(
           '6|18' => t('Day time'),
