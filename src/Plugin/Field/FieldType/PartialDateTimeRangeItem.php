@@ -171,7 +171,7 @@ class PartialDateTimeRangeItem extends PartialDateTimeItem {
       }
 
       // Build up components for the timestamp to use.
-      $value = $this->{$component};
+      $value = $this->{$property};
       if ($value && strlen($value)) {
         $timestamp_components[$component] = $value;
       }
