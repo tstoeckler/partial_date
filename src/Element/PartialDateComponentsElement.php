@@ -20,7 +20,7 @@ class PartialDateComponentsElement extends FormElement {
     return [
       '#input' => TRUE,
       '#process' => [[get_class($this), 'process']],
-      '#element_validate' => [[get_class($this), 'validate']], //array('partial_date_element_validate'),
+      '#tree' => TRUE,
       '#theme_wrappers' => array(
         'container' => array(
           '#attributes' => array(
@@ -39,14 +39,14 @@ class PartialDateComponentsElement extends FormElement {
    * Process callback.
    */
   public static function process(&$element, FormStateInterface $form_state, &$complete_form) {
-    if ($element['#show_time']) {
+    if (!$element['#show_time']) {
       unset($element['#options']['hour'], $element['#options']['minute'], $element['#options']['second']);
     }
     foreach ($element['#options'] as $key => $label) {
       $element[$key] = array(
         '#type' => 'checkbox',
         '#title' => $label,
-        '#value' => isset($element['#value'][$key]) ? $element['#value'][$key] : 0,
+        '#value' => in_array($key, $element['#value'], TRUE),
       );
       if ($element['#time_states'] && _partial_date_component_type($key) == 'time') {
         $element[$key]['#states'] = $element['#time_states'];
@@ -71,7 +71,7 @@ class PartialDateComponentsElement extends FormElement {
     elseif (isset($input)) {
       $result[$input] = $input;
     }
-    return $result;
+    return array_keys(array_filter($result));
   }
   
 }
