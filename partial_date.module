@@ -94,6 +94,7 @@ function partial_date_component_keys() {
       'hour',
       'minute',
       'second',
+      'timezone',
     );
   }
   return $components;
