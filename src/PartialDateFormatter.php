@@ -2,6 +2,7 @@
 
 namespace Drupal\partial_date;
 
+use Drupal\Core\Render\Markup;
 use Drupal\partial_date\Entity\PartialDateFormatInterface;
 
 /**
@@ -97,7 +98,9 @@ class PartialDateFormatter implements PartialDateFormatterInterface {
       }
 
     }
-    return implode('', $components);
+    // This is required to support the <sup> markup of ordinals.
+    // @todo Find a different solution for ordinals.
+    return Markup::create(implode('', $components));
   }
 
   /**
