@@ -169,7 +169,7 @@ function partial_date_granularity_field_options($type, $options = array(), $incr
 
     case 'timezone':
       // Ref: Date API module
-      return $options; //TODO: find the proper way to display timezones.... // + date_timezone_names(TRUE);
+      return $options + system_time_zones();
 
     case 'year':
     default:
