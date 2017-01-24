@@ -16,8 +16,8 @@ use Drupal\partial_date\Plugin\DataType\PartialDateTimeComputed;
  *   id = "partial_date_range",
  *   label = @Translation("Partial date and time range"),
  *   description = @Translation("This field stores and renders partial date ranges."),
- *   default_widget = "partial_date_widget",
- *   default_formatter = "partial_date_formatter",
+ *   default_widget = "partial_date_range_widget",
+ *   default_formatter = "partial_date_range_formatter",
  * )
  */
 class PartialDateTimeRangeItem extends PartialDateTimeItem {
