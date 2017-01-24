@@ -4,6 +4,7 @@
  * @file
  * Contains preproces functions for the Partial Date module.
  */
+use Drupal\Core\Cache\CacheableMetadata;
 
 /**
  * Prepares variables for a partial date.
@@ -18,8 +19,13 @@
 function template_preprocess_partial_date(array &$variables) {
   /** @var \Drupal\partial_date\PartialDateFormatterInterface $formatter */
   $formatter = \Drupal::service('partial_date.formatter');
+  /** @var \Drupal\partial_date\Entity\PartialDateFormatInterface $format */
+  $format = $variables['format'];
+
   $variables['date_array'] = $variables['date'];
-  $variables['date'] = $formatter->format($variables['date'], $variables['format']);
+  $variables['date'] = $formatter->format($variables['date'], $format);
+
+  CacheableMetadata::createFromObject($format)->applyTo($variables);
 }
 
 /**
@@ -52,4 +58,6 @@ function template_preprocess_partial_date_range(array &$variables) {
   ];
 
   $variables['separator'] = $format->getSeparator('range');
+
+  CacheableMetadata::createFromObject($format)->applyTo($variables);
 }
