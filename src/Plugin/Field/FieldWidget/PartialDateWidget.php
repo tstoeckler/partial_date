@@ -366,8 +366,10 @@ class PartialDateWidget extends WidgetBase implements ContainerFactoryPluginInte
    *   An array of components, passed by reference.
    */
   protected function filterComponents(&$components) {
+    // Do not filter the timezone if it is a minimum component.
+    $minimum_components = $this->getFieldSetting('minimum_components');
     $tz_handling = $this->getSetting('tz_handling');
-    if ($tz_handling !== 'none' && $tz_handling !== 'date') {
+    if (!$minimum_components['from']['granularity']['timezone'] && $tz_handling !== 'none' && $tz_handling !== 'date') {
       unset($components['timezone']);
     }
   }
